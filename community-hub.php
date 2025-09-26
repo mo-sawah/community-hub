@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Community Hub
  * Description: A modern community forum plugin with AI integration
- * Version: 1.0.4
+ * Version: 1.0.5
  * Author: Your Name
  */
 
@@ -148,9 +148,9 @@ class CommunityHub {
             wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', array(), '6.4.0');
             
             // Then load our CSS
-            wp_enqueue_style('community-hub-css', COMMUNITY_HUB_URL . 'assets/style.css', array('font-awesome'), '1.0.4');
-            wp_enqueue_script('community-hub-js', COMMUNITY_HUB_URL . 'assets/script.js', array('jquery'), '1.0.4', true);
-            
+            wp_enqueue_style('community-hub-css', COMMUNITY_HUB_URL . 'assets/style.css', array('font-awesome'), '1.0.5');
+            wp_enqueue_script('community-hub-js', COMMUNITY_HUB_URL . 'assets/script.js', array('jquery'), '1.0.5', true);
+
             wp_localize_script('community-hub-js', 'communityAjax', array(
                 'ajaxurl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('community_nonce')
@@ -169,8 +169,8 @@ class CommunityHub {
             wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', array(), '6.4.0');
             
             // Then load our CSS
-            wp_enqueue_style('community-hub-css', COMMUNITY_HUB_URL . 'assets/style.css', array('font-awesome'), '1.0.4');
-            wp_enqueue_script('community-hub-js', COMMUNITY_HUB_URL . 'assets/script.js', array('jquery'), '1.0.4', true);
+            wp_enqueue_style('community-hub-css', COMMUNITY_HUB_URL . 'assets/style.css', array('font-awesome'), '1.0.5');
+            wp_enqueue_script('community-hub-js', COMMUNITY_HUB_URL . 'assets/script.js', array('jquery'), '1.0.5', true);
             
             wp_localize_script('community-hub-js', 'communityAjax', array(
                 'ajaxurl' => admin_url('admin-ajax.php'),
