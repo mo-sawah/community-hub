@@ -13,6 +13,25 @@ define('COMMUNITY_HUB_PATH', plugin_dir_path(__FILE__));
 
 class CommunityHub {
 
+    // Add this function to your main plugin file or run once
+    public function create_default_communities_if_missing() {
+        $communities = array(
+            'general' => 'General discussions and community chat',
+            'technology' => 'Technology news and discussions',
+            'programming' => 'Programming tips and code sharing',
+            'announcements' => 'Official announcements and updates'
+        );
+        
+        foreach ($communities as $slug => $description) {
+            if (!term_exists($slug, 'community_category')) {
+                wp_insert_term($slug, 'community_category', array(
+                    'description' => $description,
+                    'slug' => $slug
+                ));
+            }
+        }
+    }
+
     // Add this method to the CommunityHub class
     public function create_community_pages() {
         // Create Forum page

@@ -374,28 +374,50 @@ technology trends, programming tips, web development, mobile apps, artificial in
         );
         set_transient("ai_batch_$batch_id", $batch_data, HOUR_IN_SECONDS);
         
-        // Generate fake usernames if needed
-        $fake_users = array();
-        if ($params['create_fake_users']) {
-            $fake_users = array(
-                'tech_guru_99', 'code_ninja', 'dev_master', 'pixel_pusher', 'data_wizard',
-                'script_kiddie', 'byte_bender', 'logic_lord', 'syntax_sage', 'bug_hunter',
-                'stack_overflow', 'commit_crusher', 'merge_master', 'refactor_rebel', 'deploy_demon'
+        // Validate topics
+        $topics = array_filter(array_map('trim', explode(',', $params['content_topics'])));
+        if (empty($topics)) {
+            $batch_data['status'] = 'failed';
+            $batch_data['error'] = 'No topics provided';
+            $batch_data['logs'][] = array(
+                'type' => 'error',
+                'message' => 'No valid topics found'
             );
+            set_transient("ai_batch_$batch_id", $batch_data, HOUR_IN_SECONDS);
+            return;
         }
         
-        $topics = array_map('trim', explode(',', $params['content_topics']));
+        // Validate communities
         $communities = get_terms(array(
             'taxonomy' => 'community_category',
             'include' => $params['communities'],
             'hide_empty' => false
         ));
         
-        if (empty($communities)) {
+        if (empty($communities) || is_wp_error($communities)) {
             $batch_data['status'] = 'failed';
             $batch_data['error'] = 'No valid communities found';
+            $batch_data['logs'][] = array(
+                'type' => 'error',
+                'message' => 'No valid communities found. Selected IDs: ' . implode(', ', $params['communities'])
+            );
             set_transient("ai_batch_$batch_id", $batch_data, HOUR_IN_SECONDS);
             return;
+        }
+        
+        $batch_data['logs'][] = array(
+            'type' => 'info',
+            'message' => 'Found ' . count($topics) . ' topics and ' . count($communities) . ' communities'
+        );
+        set_transient("ai_batch_$batch_id", $batch_data, HOUR_IN_SECONDS);
+        
+        // Generate fake usernames if needed
+        $fake_users = array();
+        if (isset($params['create_fake_users']) && $params['create_fake_users']) {
+            $fake_users = array(
+                'tech_guru_99', 'code_ninja', 'dev_master', 'pixel_pusher', 'data_wizard',
+                'script_kiddie', 'byte_bender', 'logic_lord', 'syntax_sage', 'bug_hunter'
+            );
         }
         
         for ($i = 0; $i < $params['post_count']; $i++) {
@@ -407,14 +429,13 @@ technology trends, programming tips, web development, mobile apps, artificial in
             );
             set_transient("ai_batch_$batch_id", $batch_data, HOUR_IN_SECONDS);
             
-            // Generate post content using AI
+            // Safely select random topic and community
             $topic = $topics[array_rand($topics)];
             $community = $communities[array_rand($communities)];
             
             $prompt = "Create a realistic forum post about '{$topic}' for a {$community->name} community. 
-            Style: {$params['content_style']}
             
-            Create engaging content that would encourage discussion. Format the response exactly as:
+            Write engaging content that would encourage discussion. Format the response exactly as:
             TITLE: [write an engaging title here]
             CONTENT: [write 2-3 paragraphs of post content that encourages discussion]
             TAGS: [write 3-5 relevant tags separated by commas]";
@@ -446,7 +467,7 @@ technology trends, programming tips, web development, mobile apps, artificial in
                         $current_section = 'tags';
                     } else {
                         // Continue current section
-                        if ($current_section === 'content') {
+                        if ($current_section === 'content' && !empty($line)) {
                             $content .= "\n\n" . $line;
                         } elseif ($current_section === 'title' && empty($title)) {
                             $title = $line;
@@ -467,75 +488,81 @@ technology trends, programming tips, web development, mobile apps, artificial in
                     $tags = "discussion, " . strtolower(str_replace(' ', '-', $topic));
                 }
                 
-                // Create post
-                $post_date = $params['vary_posting_times'] ? 
+                // Create post with error handling
+                $post_date = (isset($params['vary_posting_times']) && $params['vary_posting_times']) ? 
                     date('Y-m-d H:i:s', strtotime('-' . rand(0, 30) . ' days -' . rand(0, 23) . ' hours')) :
                     current_time('mysql');
                 
                 $author_id = 1; // Default to admin
                 if (!empty($fake_users)) {
                     $username = $fake_users[array_rand($fake_users)] . rand(100, 999);
-                    $user = get_user_by('login', $username);
-                    if (!$user) {
-                        $author_id = wp_create_user($username, wp_generate_password(), $username . '@example.com');
-                        if (is_wp_error($author_id)) {
-                            $author_id = 1; // Fallback to admin
+                    $existing_user = get_user_by('login', $username);
+                    if (!$existing_user) {
+                        $new_user_id = wp_create_user($username, wp_generate_password(), $username . '@example.com');
+                        if (!is_wp_error($new_user_id)) {
+                            $author_id = $new_user_id;
                         }
                     } else {
-                        $author_id = $user->ID;
+                        $author_id = $existing_user->ID;
                     }
                 }
                 
                 $post_id = wp_insert_post(array(
-                    'post_title' => $title,
-                    'post_content' => $content,
+                    'post_title' => sanitize_text_field($title),
+                    'post_content' => wp_kses_post($content),
                     'post_type' => 'community_post',
                     'post_status' => 'publish',
                     'post_author' => $author_id,
                     'post_date' => $post_date
-                ));
+                ), true); // Enable error return
                 
-                if ($post_id && !is_wp_error($post_id)) {
+                if (!is_wp_error($post_id) && $post_id) {
                     // Set community
-                    wp_set_object_terms($post_id, $community->term_id, 'community_category');
+                    $term_result = wp_set_object_terms($post_id, $community->term_id, 'community_category');
                     
                     // Set tags
                     if ($tags) {
-                        update_post_meta($post_id, '_community_tags', $tags);
+                        update_post_meta($post_id, '_community_tags', sanitize_text_field($tags));
                     }
                     
-                    // Add random votes
-                    global $wpdb;
-                    $votes_table = $wpdb->prefix . 'community_votes';
-                    $vote_count = rand($params['min_votes'], $params['max_votes']);
-                    
-                    for ($v = 0; $v < abs($vote_count); $v++) {
-                        $vote_type = $vote_count > 0 ? 'up' : 'down';
-                        $voter_id = rand(1, 10);
+                    // Add random votes with validation
+                    if (isset($params['min_votes']) && isset($params['max_votes'])) {
+                        global $wpdb;
+                        $votes_table = $wpdb->prefix . 'community_votes';
+                        $vote_count = rand(max(0, $params['min_votes']), max(1, $params['max_votes']));
                         
-                        $wpdb->replace($votes_table, array(
-                            'post_id' => $post_id,
-                            'user_id' => $voter_id,
-                            'vote_type' => $vote_type
-                        ));
+                        for ($v = 0; $v < abs($vote_count); $v++) {
+                            $vote_type = $vote_count > 0 ? 'up' : 'down';
+                            $voter_id = rand(1, 10);
+                            
+                            $wpdb->replace($votes_table, array(
+                                'post_id' => $post_id,
+                                'user_id' => $voter_id,
+                                'vote_type' => $vote_type
+                            ));
+                        }
+                        
+                        $batch_data['stats']['votes'] += abs($vote_count);
                     }
                     
-                    // Add view count
-                    $view_count = rand($params['min_views'], $params['max_views']);
-                    update_post_meta($post_id, '_community_views', $view_count);
+                    // Add view count with validation
+                    if (isset($params['min_views']) && isset($params['max_views'])) {
+                        $view_count = rand(max(1, $params['min_views']), max(1, $params['max_views']));
+                        update_post_meta($post_id, '_community_views', $view_count);
+                        $batch_data['stats']['views'] += $view_count;
+                    }
                     
                     $batch_data['stats']['posts']++;
-                    $batch_data['stats']['votes'] += abs($vote_count);
-                    $batch_data['stats']['views'] += $view_count;
                     
                     $batch_data['logs'][] = array(
                         'type' => 'success',
                         'message' => "Created post: " . $title
                     );
                 } else {
+                    $error_message = is_wp_error($post_id) ? $post_id->get_error_message() : 'Unknown error creating post';
                     $batch_data['logs'][] = array(
                         'type' => 'error',
-                        'message' => "Failed to create post: " . ($title ?: 'Unknown error')
+                        'message' => "Failed to create post: " . $error_message
                     );
                 }
             } else {
@@ -548,6 +575,9 @@ technology trends, programming tips, web development, mobile apps, artificial in
             // Update progress
             $batch_data['completed'] = $i + 1;
             set_transient("ai_batch_$batch_id", $batch_data, HOUR_IN_SECONDS);
+            
+            // Small delay to avoid overwhelming the server
+            usleep(500000); // 0.5 seconds
         }
         
         // Mark as completed
