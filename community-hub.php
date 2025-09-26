@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Community Hub
  * Description: A modern community forum plugin with AI integration
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: Your Name
  */
 
@@ -125,8 +125,12 @@ class CommunityHub {
         if (is_page('forum') || is_page('create-post') || 
             (is_admin() && isset($_GET['page']) && $_GET['page'] === 'community-ai-generator')) {
             
-            wp_enqueue_script('community-hub-js', COMMUNITY_HUB_URL . 'assets/script.js', array('jquery'), '1.0.3', true);
-            wp_enqueue_style('community-hub-css', COMMUNITY_HUB_URL . 'assets/style.css', array(), '1.0.3');
+            // Load Font Awesome first
+            wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', array(), '6.4.0');
+            
+            // Then load our CSS
+            wp_enqueue_style('community-hub-css', COMMUNITY_HUB_URL . 'assets/style.css', array('font-awesome'), '1.0.4');
+            wp_enqueue_script('community-hub-js', COMMUNITY_HUB_URL . 'assets/script.js', array('jquery'), '1.0.4', true);
             
             wp_localize_script('community-hub-js', 'communityAjax', array(
                 'ajaxurl' => admin_url('admin-ajax.php'),
@@ -142,8 +146,12 @@ class CommunityHub {
         if (is_a($post, 'WP_Post') && (has_shortcode($post->post_content, 'community_forum') || 
             has_shortcode($post->post_content, 'create_post'))) {
             
-            wp_enqueue_style('community-hub-css', COMMUNITY_HUB_URL . 'assets/style.css', array(), '1.0.3');
-            wp_enqueue_script('community-hub-js', COMMUNITY_HUB_URL . 'assets/script.js', array('jquery'), '1.0.3', true);
+            // Load Font Awesome first
+            wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', array(), '6.4.0');
+            
+            // Then load our CSS
+            wp_enqueue_style('community-hub-css', COMMUNITY_HUB_URL . 'assets/style.css', array('font-awesome'), '1.0.4');
+            wp_enqueue_script('community-hub-js', COMMUNITY_HUB_URL . 'assets/script.js', array('jquery'), '1.0.4', true);
             
             wp_localize_script('community-hub-js', 'communityAjax', array(
                 'ajaxurl' => admin_url('admin-ajax.php'),
