@@ -30,17 +30,30 @@
     initTheme() {
       const $container = $("#community-hub-container");
       const $themeBtn = $("#ch-theme-btn");
+      const $sunIcon = $themeBtn.find(".fa-sun");
+      const $moonIcon = $themeBtn.find(".fa-moon");
 
       // Load saved theme
       const savedTheme = localStorage.getItem("ch-theme") || "light";
       if (savedTheme === "dark") {
         $container.addClass("ch-dark-mode");
+        $sunIcon.hide();
+        $moonIcon.show();
       }
 
       $themeBtn.on("click", () => {
         $container.toggleClass("ch-dark-mode");
         const isDark = $container.hasClass("ch-dark-mode");
         localStorage.setItem("ch-theme", isDark ? "dark" : "light");
+
+        // Toggle icons
+        if (isDark) {
+          $sunIcon.hide();
+          $moonIcon.show();
+        } else {
+          $moonIcon.hide();
+          $sunIcon.show();
+        }
 
         // Add animation
         $themeBtn.addClass("ch-loading");
@@ -74,13 +87,24 @@
 
     performSearch(query) {
       console.log("Searching for:", query);
-      // Implement search logic here
-      // This would filter posts in real-time or redirect to search results
+      // Filter posts in real-time
+      $(".ch-post-card").each(function () {
+        const $card = $(this);
+        const title = $card.find(".ch-post-title").text().toLowerCase();
+        const content = $card.find(".ch-post-excerpt").text().toLowerCase();
+        const searchTerm = query.toLowerCase();
+
+        if (title.includes(searchTerm) || content.includes(searchTerm)) {
+          $card.show().addClass("ch-fade-in");
+        } else {
+          $card.hide().removeClass("ch-fade-in");
+        }
+      });
     }
 
     // Voting System
     initVoting() {
-      $(document).on("click", ".ch-vote-btn", (e) => {
+      $(document).on("click", ".ch-vote-btn:not([disabled])", (e) => {
         e.preventDefault();
         const $btn = $(e.currentTarget);
         const $card = $btn.closest(".ch-post-card");
@@ -96,8 +120,8 @@
     handleVote(postId, voteType, $btn) {
       const $card = $btn.closest(".ch-post-card");
       const $voteCount = $card.find(".ch-vote-count");
-      const $upBtn = $card.find(".ch-vote-up");
-      const $downBtn = $card.find(".ch-vote-down");
+      const $upBtn = $card.find('.ch-vote-btn[data-vote="up"]');
+      const $downBtn = $card.find('.ch-vote-btn[data-vote="down"]');
 
       // Show loading
       $btn.addClass("ch-loading");
@@ -117,11 +141,16 @@
             $voteCount.text(data.total);
 
             // Update UI
-            $upBtn.removeClass("ch-voted");
-            $downBtn.removeClass("ch-voted");
+            $upBtn.removeClass("ch-voted-up");
+            $downBtn.removeClass("ch-voted-down");
 
-            if (!$btn.hasClass("ch-voted")) {
-              $btn.addClass("ch-voted");
+            if (
+              !$btn.hasClass("ch-voted-up") &&
+              !$btn.hasClass("ch-voted-down")
+            ) {
+              $btn.addClass(
+                voteType === "up" ? "ch-voted-up" : "ch-voted-down"
+              );
             }
 
             // Animation
@@ -145,37 +174,26 @@
         const $tab = $(e.currentTarget);
         const sortType = $tab.data("sort");
 
-        // Update active tab
-        $(".ch-tab").removeClass("ch-tab-active");
-        $tab.addClass("ch-tab-active");
+        // Update URL
+        const url = new URL(window.location);
+        url.searchParams.set("sort", sortType);
+        window.history.pushState({}, "", url);
 
-        // Sort posts
-        this.sortPosts(sortType);
+        // Reload page with new sort
+        window.location.reload();
       });
-    }
-
-    sortPosts(sortType) {
-      const $container = $(".ch-posts-container");
-      const $posts = $container.find(".ch-post-card");
-
-      $container.addClass("ch-loading");
-
-      // Simulate sorting delay
-      setTimeout(() => {
-        console.log("Sorting by:", sortType);
-        // Implement actual sorting logic here
-        $container.removeClass("ch-loading");
-      }, 500);
     }
 
     // Create Post Functionality
     initCreatePost() {
+      if ($("#ch-create-post-form").length === 0) return;
+
       this.initFormValidation();
       this.initCharacterCounters();
       this.initEditorToolbar();
       this.initPreview();
       this.initFormSubmission();
-      this.initAIGeneration();
+      this.initDraftLoader();
     }
 
     initFormValidation() {
@@ -200,8 +218,23 @@
         return false;
       }
 
+      if (title.length < 5) {
+        this.showMessage("Title must be at least 5 characters long", "error");
+        $("#title").focus();
+        return false;
+      }
+
       if (!content) {
         this.showMessage("Please enter some content", "error");
+        $("#content").focus();
+        return false;
+      }
+
+      if (content.length < 10) {
+        this.showMessage(
+          "Content must be at least 10 characters long",
+          "error"
+        );
         $("#content").focus();
         return false;
       }
@@ -222,6 +255,8 @@
 
         if (length > 250) {
           $("#title-counter").css("color", "var(--ch-danger)");
+        } else if (length > 200) {
+          $("#title-counter").css("color", "var(--ch-warning)");
         } else {
           $("#title-counter").css("color", "var(--ch-text-muted)");
         }
@@ -243,18 +278,42 @@
       const selectedText = textarea.value.substring(start, end);
 
       let replacement = "";
+      let cursorOffset = 0;
+
       switch (format) {
         case "bold":
           replacement = `**${selectedText}**`;
+          cursorOffset = selectedText ? 0 : 2;
           break;
         case "italic":
           replacement = `*${selectedText}*`;
+          cursorOffset = selectedText ? 0 : 1;
           break;
         case "link":
-          replacement = `[${selectedText}](url)`;
+          replacement = `[${selectedText || "link text"}](url)`;
+          cursorOffset = selectedText ? replacement.length - 4 : 1;
           break;
         case "code":
           replacement = `\`${selectedText}\``;
+          cursorOffset = selectedText ? 0 : 1;
+          break;
+        case "list":
+          replacement = selectedText
+            ? selectedText
+                .split("\n")
+                .map((line) => `- ${line}`)
+                .join("\n")
+            : "- List item";
+          cursorOffset = selectedText ? 0 : 2;
+          break;
+        case "quote":
+          replacement = selectedText
+            ? selectedText
+                .split("\n")
+                .map((line) => `> ${line}`)
+                .join("\n")
+            : "> Quote text";
+          cursorOffset = selectedText ? 0 : 2;
           break;
       }
 
@@ -266,7 +325,7 @@
         $textarea.val(newValue);
 
         // Set cursor position
-        const newPos = start + replacement.length;
+        const newPos = start + replacement.length - cursorOffset;
         textarea.setSelectionRange(newPos, newPos);
         $textarea.focus();
       }
@@ -292,27 +351,87 @@
       const title = $("#title").val();
       const content = $("#content").val();
       const community = $("#community option:selected").text();
+      const postType = $('input[name="post_type"]:checked').val();
+      const tags = $("#tags").val();
+
+      let typeIcon = "";
+      switch (postType) {
+        case "question":
+          typeIcon = '<i class="fas fa-question-circle"></i>';
+          break;
+        case "tutorial":
+          typeIcon = '<i class="fas fa-graduation-cap"></i>';
+          break;
+        case "announcement":
+          typeIcon = '<i class="fas fa-bullhorn"></i>';
+          break;
+        default:
+          typeIcon = '<i class="fas fa-comments"></i>';
+      }
 
       const previewHtml = `
                 <div class="ch-post-card">
                     <div class="ch-post-content">
-                        <div class="ch-vote-section">
-                            <button class="ch-vote-btn">⬆</button>
+                       <div class="ch-vote-section">
+                            <button class="ch-vote-btn">
+                                <i class="fas fa-chevron-up"></i>
+                            </button>
                             <span class="ch-vote-count">1</span>
-                            <button class="ch-vote-btn">⬇</button>
+                            <button class="ch-vote-btn">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
                         </div>
                         <div class="ch-post-details">
                             <div class="ch-post-meta">
-                                <span class="ch-community">${community}</span>
-                                <span class="ch-author">by u/you</span>
-                                <span class="ch-time">just now</span>
+                                <span class="ch-community">
+                                    <i class="fas fa-tag"></i>
+                                    ${community}
+                                </span>
+                                <span>•</span>
+                                <span>
+                                    <i class="fas fa-user"></i>
+                                    by u/you
+                                </span>
+                                <span>•</span>
+                                <span>
+                                    <i class="fas fa-clock"></i>
+                                    just now
+                                </span>
                             </div>
-                            <h3 class="ch-post-title">${title}</h3>
-                            <div class="ch-post-excerpt">${content}</div>
+                            <h3 class="ch-post-title">
+                                ${typeIcon} ${title}
+                            </h3>
+                            <div class="ch-post-excerpt">
+                                ${content.substring(0, 200)}${
+        content.length > 200 ? "..." : ""
+      }
+                            </div>
+                            ${
+                              tags
+                                ? `<div class="ch-post-tags">
+                                ${tags
+                                  .split(",")
+                                  .map(
+                                    (tag) =>
+                                      `<span class="ch-tag">${tag.trim()}</span>`
+                                  )
+                                  .join("")}
+                            </div>`
+                                : ""
+                            }
                             <div class="ch-post-actions">
-                                <button class="ch-action-btn">💬 0 comments</button>
-                                <button class="ch-action-btn">📤 Share</button>
-                                <button class="ch-action-btn">🚩 Report</button>
+                                <button class="ch-action-btn">
+                                    <i class="fas fa-comment"></i>
+                                    0 comments
+                                </button>
+                                <button class="ch-action-btn">
+                                    <i class="fas fa-share"></i>
+                                    Share
+                                </button>
+                                <button class="ch-action-btn">
+                                    <i class="fas fa-bookmark"></i>
+                                    Save
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -333,7 +452,9 @@
       const $form = $("#ch-create-post-form");
       const $submitBtn = $("#publish-btn");
 
-      $submitBtn.addClass("ch-loading").text("Publishing...");
+      $submitBtn
+        .addClass("ch-loading")
+        .html('<i class="fas fa-spinner fa-spin"></i> Publishing...');
 
       const formData = {
         action: "create_post",
@@ -341,6 +462,7 @@
         content: $("#content").val(),
         community: $("#community").val(),
         tags: $("#tags").val(),
+        post_type: $('input[name="post_type"]:checked').val(),
         nonce: $('input[name="nonce"]').val(),
       };
 
@@ -352,6 +474,8 @@
           const data = JSON.parse(response);
           if (data.success) {
             this.showMessage("Post published successfully!", "success");
+            // Clear draft
+            localStorage.removeItem("ch_draft");
             setTimeout(() => {
               window.location.href = window.location.origin + "/forum/";
             }, 1500);
@@ -363,7 +487,9 @@
           this.showMessage("Error creating post. Please try again.", "error");
         },
         complete: () => {
-          $submitBtn.removeClass("ch-loading").text("🚀 Publish Post");
+          $submitBtn
+            .removeClass("ch-loading")
+            .html('<i class="fas fa-paper-plane"></i> Publish Post');
         },
       });
     }
@@ -374,6 +500,7 @@
         content: $("#content").val(),
         community: $("#community").val(),
         tags: $("#tags").val(),
+        post_type: $('input[name="post_type"]:checked').val(),
         timestamp: new Date().toISOString(),
       };
 
@@ -389,109 +516,54 @@
         $("#content").val(data.content || "");
         $("#community").val(data.community || "");
         $("#tags").val(data.tags || "");
+        if (data.post_type) {
+          $(`input[name="post_type"][value="${data.post_type}"]`).prop(
+            "checked",
+            true
+          );
+        }
+
+        // Update character counter
+        $("#title").trigger("input");
+
+        this.showMessage("Draft loaded!", "info");
       }
     }
 
-    // AI Generation
-    initAIGeneration() {
-      $("#ai-generate-btn").on("click", () => {
-        this.generateAIContent();
-      });
-    }
+    initDraftLoader() {
+      if (window.location.pathname.includes("create-post")) {
+        // Check for draft on page load
+        const draft = localStorage.getItem("ch_draft");
+        if (draft) {
+          const data = JSON.parse(draft);
+          const age = (new Date() - new Date(data.timestamp)) / (1000 * 60); // minutes
 
-    generateAIContent() {
-      const title = $("#title").val();
-      const community = $("#community option:selected").text();
+          if (age < 60) {
+            // Less than 1 hour old
+            if (
+              confirm("You have a recent draft. Would you like to load it?")
+            ) {
+              this.loadDraft();
+            }
+          }
+        }
 
-      if (!title) {
-        this.showMessage(
-          "Please enter a title first to generate content",
-          "error"
-        );
-        return;
+        this.initAutoSave();
       }
-
-      const $btn = $("#ai-generate-btn");
-      $btn.addClass("ch-loading").text("✨ Generating...");
-
-      // Simulate AI generation (replace with actual OpenRouter API call)
-      setTimeout(() => {
-        const generatedContent = this.simulateAIGeneration(title, community);
-        $("#content").val(generatedContent);
-        $btn.removeClass("ch-loading").text("✨ AI Generate");
-        this.showMessage("Content generated successfully!", "success");
-      }, 2000);
     }
 
-    simulateAIGeneration(title, community) {
-      // This would be replaced with actual OpenRouter API call
-      const templates = {
-        announcements: `This is an exciting announcement about ${title}. 
+    initAutoSave() {
+      let autoSaveTimeout;
 
-We're thrilled to share this update with our community. Here are the key highlights:
-
-- Important update regarding our platform
-- New features and improvements
-- What this means for our users
-- Timeline and next steps
-
-We appreciate your continued support and feedback. Please feel free to share your thoughts in the comments below.`,
-
-        development: `Here's a comprehensive discussion about ${title}:
-
-## Overview
-This topic covers important aspects of development that every developer should know.
-
-## Key Points
-- Technical considerations
-- Best practices and patterns
-- Common pitfalls to avoid
-- Implementation strategies
-
-## Code Example
-\`\`\`javascript
-// Example implementation
-function example() {
-    return "This is a sample";
-}
-\`\`\`
-
-## Conclusion
-What are your thoughts on this approach? I'd love to hear your experiences and suggestions.`,
-
-        "feature-requests": `I'd like to propose a new feature: ${title}
-
-## Problem Statement
-Currently, users face challenges with...
-
-## Proposed Solution
-This feature would help by providing...
-
-## Benefits
-- Improved user experience
-- Better workflow efficiency
-- Enhanced functionality
-- Reduced friction
-
-## Implementation Ideas
-Here are some thoughts on how this could work...
-
-What do you think? Would this be valuable for the community?`,
-
-        default: `Let's discuss ${title}.
-
-This is an important topic that deserves our attention. Here are some key points to consider:
-
-- Main aspects to discuss
-- Different perspectives to explore
-- Potential solutions or approaches
-- Community input and feedback
-
-I'm curious to hear what others think about this. Please share your experiences and insights!`,
-      };
-
-      const communityKey = community.toLowerCase().replace("r/", "");
-      return templates[communityKey] || templates["default"];
+      $('#title, #content, #community, #tags, input[name="post_type"]').on(
+        "input change",
+        () => {
+          clearTimeout(autoSaveTimeout);
+          autoSaveTimeout = setTimeout(() => {
+            this.saveDraft();
+          }, 30000); // Auto-save every 30 seconds
+        }
+      );
     }
 
     // Utility Functions
@@ -499,7 +571,7 @@ I'm curious to hear what others think about this. Please share your experiences 
       $(".ch-post-card").each((index, element) => {
         setTimeout(() => {
           $(element).addClass("ch-slide-up");
-        }, index * 100);
+        }, index * 50);
       });
     }
 
@@ -507,40 +579,30 @@ I'm curious to hear what others think about this. Please share your experiences 
       // Remove existing messages
       $(".ch-message").remove();
 
+      let icon = "";
+      switch (type) {
+        case "success":
+          icon = '<i class="fas fa-check-circle"></i>';
+          break;
+        case "error":
+          icon = '<i class="fas fa-exclamation-circle"></i>';
+          break;
+        case "warning":
+          icon = '<i class="fas fa-exclamation-triangle"></i>';
+          break;
+        default:
+          icon = '<i class="fas fa-info-circle"></i>';
+      }
+
       const $message = $(`
                 <div class="ch-message ch-message-${type}">
+                    ${icon}
                     <span>${message}</span>
-                    <button class="ch-message-close">&times;</button>
+                    <button class="ch-message-close">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
             `);
-
-      $message.css({
-        position: "fixed",
-        top: "20px",
-        right: "20px",
-        padding: "1rem 1.5rem",
-        borderRadius: "var(--ch-radius)",
-        color: "white",
-        fontWeight: "500",
-        zIndex: "1001",
-        display: "flex",
-        alignItems: "center",
-        gap: "1rem",
-        minWidth: "300px",
-        maxWidth: "500px",
-        boxShadow: "var(--ch-shadow-lg)",
-        animation: "ch-slideUp 0.3s ease-out",
-      });
-
-      if (type === "success") {
-        $message.css("background", "var(--ch-success)");
-      } else if (type === "error") {
-        $message.css("background", "var(--ch-danger)");
-      } else if (type === "warning") {
-        $message.css("background", "var(--ch-warning)");
-      } else {
-        $message.css("background", "var(--ch-primary)");
-      }
 
       $("body").append($message);
 
@@ -555,115 +617,55 @@ I'm curious to hear what others think about this. Please share your experiences 
       });
     }
 
-    // API Integration (OpenRouter)
-    async callOpenRouterAPI(prompt, options = {}) {
-      const settings = await this.getPluginSettings();
+    // Load More Posts
+    initLoadMore() {
+      $("#load-more-posts").on("click", (e) => {
+        e.preventDefault();
+        const $btn = $(e.currentTarget);
+        $btn
+          .addClass("ch-loading")
+          .html('<i class="fas fa-spinner fa-spin"></i> Loading...');
 
-      if (!settings.openrouter_api_key) {
-        this.showMessage("OpenRouter API key not configured", "error");
-        return null;
-      }
-
-      try {
-        const response = await fetch(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${settings.openrouter_api_key}`,
-              "Content-Type": "application/json",
-              "X-Title": "Community Hub Plugin",
-            },
-            body: JSON.stringify({
-              model: options.model || "anthropic/claude-3-sonnet",
-              messages: [
-                {
-                  role: "user",
-                  content: prompt,
-                },
-              ],
-              max_tokens: options.max_tokens || 1000,
-              temperature: options.temperature || 0.7,
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`API request failed: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return data.choices[0]?.message?.content;
-      } catch (error) {
-        console.error("OpenRouter API error:", error);
-        this.showMessage("AI generation failed. Please try again.", "error");
-        return null;
-      }
+        // Simulate loading more posts
+        setTimeout(() => {
+          $btn
+            .removeClass("ch-loading")
+            .html('<i class="fas fa-plus"></i> Load More Posts');
+          this.showMessage("No more posts to load", "info");
+        }, 1000);
+      });
     }
 
-    async getPluginSettings() {
-      return new Promise((resolve) => {
-        $.ajax({
-          url: communityAjax.ajaxurl,
-          type: "POST",
-          data: {
-            action: "get_plugin_settings",
-            nonce: communityAjax.nonce,
-          },
-          success: (response) => {
-            resolve(JSON.parse(response));
-          },
-          error: () => {
-            resolve({});
-          },
+    // Copy to clipboard utility
+    copyToClipboard(text) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+          this.showMessage("Link copied to clipboard!", "success");
         });
-      });
-    }
-
-    // Auto-generate content with AI
-    async generateRealAIContent() {
-      const title = $("#title").val();
-      const community = $("#community option:selected").text();
-
-      const prompt = `Create engaging forum post content for a post titled "${title}" in the ${community} community. 
-            The content should be:
-            - Informative and engaging
-            - Appropriate for the community topic
-            - Well-structured with clear sections
-            - Include relevant examples or code if technical
-            - Encourage community discussion
-            - Be around 200-400 words
-            
-            Please write in a conversational tone that encourages responses from community members.`;
-
-      const content = await this.callOpenRouterAPI(prompt);
-      if (content) {
-        $("#content").val(content);
-        this.showMessage("AI content generated successfully!", "success");
-      }
-    }
-
-    // Initialize auto-save
-    initAutoSave() {
-      let autoSaveTimeout;
-
-      $("#title, #content, #community, #tags").on("input change", () => {
-        clearTimeout(autoSaveTimeout);
-        autoSaveTimeout = setTimeout(() => {
-          this.saveDraft();
-        }, 30000); // Auto-save every 30 seconds
-      });
-    }
-
-    // Load draft on page load
-    initDraftLoader() {
-      if (window.location.pathname.includes("create-post")) {
-        this.loadDraft();
-        this.initAutoSave();
+      } else {
+        // Fallback
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        this.showMessage("Link copied to clipboard!", "success");
       }
     }
   }
 
+  // Global function for share button
+  window.copyToClipboard = function (text) {
+    const hub = new CommunityHub();
+    hub.copyToClipboard(text);
+  };
+
   // Initialize the plugin
   const communityHub = new CommunityHub();
+
+  // Initialize load more if present
+  if ($("#load-more-posts").length) {
+    communityHub.initLoadMore();
+  }
 })(jQuery);

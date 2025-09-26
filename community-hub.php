@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Community Hub
  * Description: A modern community forum plugin with AI integration
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Your Name
  */
 
@@ -65,6 +65,7 @@ class CommunityHub {
         // Include additional files
         require_once COMMUNITY_HUB_PATH . 'includes/admin.php';
         require_once COMMUNITY_HUB_PATH . 'includes/ai-helper.php';
+        require_once COMMUNITY_HUB_PATH . 'includes/ai-content-generator.php';
         require_once COMMUNITY_HUB_PATH . 'includes/installer.php';
     }
     
@@ -189,6 +190,8 @@ class CommunityHub {
         $title = sanitize_text_field($_POST['title']);
         $content = wp_kses_post($_POST['content']);
         $community = sanitize_text_field($_POST['community']);
+        $tags = sanitize_text_field($_POST['tags']);
+        $post_type = sanitize_text_field($_POST['post_type']);
         
         $post_id = wp_insert_post(array(
             'post_title' => $title,
@@ -198,8 +201,21 @@ class CommunityHub {
             'post_author' => get_current_user_id()
         ));
         
-        if ($post_id && $community) {
-            wp_set_object_terms($post_id, $community, 'community_category');
+        if ($post_id) {
+            if ($community) {
+                wp_set_object_terms($post_id, $community, 'community_category');
+            }
+            
+            if ($tags) {
+                update_post_meta($post_id, '_community_tags', $tags);
+            }
+            
+            if ($post_type) {
+                update_post_meta($post_id, '_community_post_type', $post_type);
+            }
+            
+            // Initialize view count
+            update_post_meta($post_id, '_community_views', 0);
         }
         
         wp_die(json_encode(array('success' => true, 'post_id' => $post_id)));
