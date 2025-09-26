@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Community Hub
  * Description: A modern community forum plugin with AI integration
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Your Name
  */
 
@@ -12,6 +12,48 @@ define('COMMUNITY_HUB_URL', plugin_dir_url(__FILE__));
 define('COMMUNITY_HUB_PATH', plugin_dir_path(__FILE__));
 
 class CommunityHub {
+
+    // Add this method to the CommunityHub class
+    public function create_community_pages() {
+        // Create Forum page
+        $forum_page = get_page_by_path('forum');
+        if (!$forum_page) {
+            $forum_id = wp_insert_post(array(
+                'post_title' => 'Community Forum',
+                'post_content' => '[community_forum]',
+                'post_status' => 'publish',
+                'post_type' => 'page',
+                'post_name' => 'forum',
+                'post_excerpt' => 'Join our community discussions'
+            ));
+            
+            if ($forum_id) {
+                update_post_meta($forum_id, '_wp_page_template', 'page-full-width.php');
+            }
+        }
+        
+        // Create Create Post page
+        $create_page = get_page_by_path('create-post');
+        if (!$create_page) {
+            $create_id = wp_insert_post(array(
+                'post_title' => 'Create New Post',
+                'post_content' => '[create_post]',
+                'post_status' => 'publish',
+                'post_type' => 'page',
+                'post_name' => 'create-post',
+                'post_excerpt' => 'Share your thoughts with the community'
+            ));
+            
+            if ($create_id) {
+                update_post_meta($create_id, '_wp_page_template', 'page-full-width.php');
+            }
+        }
+        
+        return array(
+            'forum' => get_page_by_path('forum'),
+            'create_post' => get_page_by_path('create-post')
+        );
+    }
     
     public function __construct() {
         add_action('init', array($this, 'init'));
@@ -36,6 +78,7 @@ class CommunityHub {
     
     public function activate() {
         $this->create_tables();
+        $this->create_community_pages(); // Add this line
         CommunityHubInstaller::install();
         flush_rewrite_rules();
     }
