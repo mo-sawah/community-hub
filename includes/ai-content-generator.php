@@ -320,13 +320,13 @@ technology trends, programming tips, web development, mobile apps, artificial in
         
         $settings = get_option('community_hub_settings');
         if (empty($settings['openrouter_api_key'])) {
-            wp_die(json_encode(array('success' => false, 'data' => 'OpenRouter API key not configured')));
+            wp_die(json_encode(array('success' => false, 'data' => 'OpenRouter API key not configured. Please go to Settings > Community Hub and add your API key.')));
         }
         
         $batch_id = uniqid('batch_');
         $params = array(
             'post_count' => intval($_POST['post_count']),
-            'communities' => $_POST['communities'] ?? array(),
+            'communities' => isset($_POST['communities']) ? $_POST['communities'] : array(),
             'replies_per_post' => intval($_POST['replies_per_post']),
             'min_votes' => intval($_POST['min_votes']),
             'max_votes' => intval($_POST['max_votes']),
@@ -338,6 +338,11 @@ technology trends, programming tips, web development, mobile apps, artificial in
             'vary_posting_times' => isset($_POST['vary_posting_times'])
         );
         
+        // Validate communities
+        if (empty($params['communities'])) {
+            wp_die(json_encode(array('success' => false, 'data' => 'Please select at least one community')));
+        }
+        
         // Store batch info
         set_transient("ai_batch_$batch_id", array(
             'status' => 'processing',
@@ -348,10 +353,252 @@ technology trends, programming tips, web development, mobile apps, artificial in
             'logs' => array()
         ), HOUR_IN_SECONDS);
         
-        // Schedule background processing
-        wp_schedule_single_event(time(), 'process_ai_generation', array($batch_id));
+        // Process immediately instead of scheduling
+        $this->process_ai_generation_immediate($batch_id);
         
         wp_die(json_encode(array('success' => true, 'data' => array('batch_id' => $batch_id))));
+    }
+
+    // Add this new method for immediate processing
+    public function process_ai_generation_immediate($batch_id) {
+        $batch_data = get_transient("ai_batch_$batch_id");
+        if (!$batch_data) return;
+        
+        $params = $batch_data['params'];
+        $settings = get_option('community_hub_settings');
+        
+        // Update initial log
+        $batch_data['logs'][] = array(
+            'type' => 'info',
+            'message' => 'Starting AI content generation...'
+        );
+        set_transient("ai_batch_$batch_id", $batch_data, HOUR_IN_SECONDS);
+        
+        // Generate fake usernames if needed
+        $fake_users = array();
+        if ($params['create_fake_users']) {
+            $fake_users = array(
+                'tech_guru_99', 'code_ninja', 'dev_master', 'pixel_pusher', 'data_wizard',
+                'script_kiddie', 'byte_bender', 'logic_lord', 'syntax_sage', 'bug_hunter',
+                'stack_overflow', 'commit_crusher', 'merge_master', 'refactor_rebel', 'deploy_demon'
+            );
+        }
+        
+        $topics = array_map('trim', explode(',', $params['content_topics']));
+        $communities = get_terms(array(
+            'taxonomy' => 'community_category',
+            'include' => $params['communities'],
+            'hide_empty' => false
+        ));
+        
+        if (empty($communities)) {
+            $batch_data['status'] = 'failed';
+            $batch_data['error'] = 'No valid communities found';
+            set_transient("ai_batch_$batch_id", $batch_data, HOUR_IN_SECONDS);
+            return;
+        }
+        
+        for ($i = 0; $i < $params['post_count']; $i++) {
+            // Update progress
+            $batch_data['completed'] = $i;
+            $batch_data['logs'][] = array(
+                'type' => 'info',
+                'message' => "Generating post " . ($i + 1) . " of " . $params['post_count'] . "..."
+            );
+            set_transient("ai_batch_$batch_id", $batch_data, HOUR_IN_SECONDS);
+            
+            // Generate post content using AI
+            $topic = $topics[array_rand($topics)];
+            $community = $communities[array_rand($communities)];
+            
+            $prompt = "Create a realistic forum post about '{$topic}' for a {$community->name} community. 
+            Style: {$params['content_style']}
+            
+            Create engaging content that would encourage discussion. Format the response exactly as:
+            TITLE: [write an engaging title here]
+            CONTENT: [write 2-3 paragraphs of post content that encourages discussion]
+            TAGS: [write 3-5 relevant tags separated by commas]";
+            
+            $ai_response = $this->call_openrouter_api_simple($prompt, $settings['openrouter_api_key']);
+            
+            if ($ai_response) {
+                // Parse AI response
+                $title = '';
+                $content = '';
+                $tags = '';
+                
+                // Split by lines and parse
+                $lines = explode("\n", $ai_response);
+                $current_section = '';
+                
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if (empty($line)) continue;
+                    
+                    if (strpos($line, 'TITLE:') === 0) {
+                        $title = trim(substr($line, 6));
+                        $current_section = 'title';
+                    } elseif (strpos($line, 'CONTENT:') === 0) {
+                        $content = trim(substr($line, 8));
+                        $current_section = 'content';
+                    } elseif (strpos($line, 'TAGS:') === 0) {
+                        $tags = trim(substr($line, 5));
+                        $current_section = 'tags';
+                    } else {
+                        // Continue current section
+                        if ($current_section === 'content') {
+                            $content .= "\n\n" . $line;
+                        } elseif ($current_section === 'title' && empty($title)) {
+                            $title = $line;
+                        } elseif ($current_section === 'tags' && empty($tags)) {
+                            $tags = $line;
+                        }
+                    }
+                }
+                
+                // Fallback if parsing failed
+                if (empty($title)) {
+                    $title = "Discussion about " . $topic;
+                }
+                if (empty($content)) {
+                    $content = "Let's discuss " . $topic . ". What are your thoughts on this topic? I'd love to hear different perspectives from the community.";
+                }
+                if (empty($tags)) {
+                    $tags = "discussion, " . strtolower(str_replace(' ', '-', $topic));
+                }
+                
+                // Create post
+                $post_date = $params['vary_posting_times'] ? 
+                    date('Y-m-d H:i:s', strtotime('-' . rand(0, 30) . ' days -' . rand(0, 23) . ' hours')) :
+                    current_time('mysql');
+                
+                $author_id = 1; // Default to admin
+                if (!empty($fake_users)) {
+                    $username = $fake_users[array_rand($fake_users)] . rand(100, 999);
+                    $user = get_user_by('login', $username);
+                    if (!$user) {
+                        $author_id = wp_create_user($username, wp_generate_password(), $username . '@example.com');
+                        if (is_wp_error($author_id)) {
+                            $author_id = 1; // Fallback to admin
+                        }
+                    } else {
+                        $author_id = $user->ID;
+                    }
+                }
+                
+                $post_id = wp_insert_post(array(
+                    'post_title' => $title,
+                    'post_content' => $content,
+                    'post_type' => 'community_post',
+                    'post_status' => 'publish',
+                    'post_author' => $author_id,
+                    'post_date' => $post_date
+                ));
+                
+                if ($post_id && !is_wp_error($post_id)) {
+                    // Set community
+                    wp_set_object_terms($post_id, $community->term_id, 'community_category');
+                    
+                    // Set tags
+                    if ($tags) {
+                        update_post_meta($post_id, '_community_tags', $tags);
+                    }
+                    
+                    // Add random votes
+                    global $wpdb;
+                    $votes_table = $wpdb->prefix . 'community_votes';
+                    $vote_count = rand($params['min_votes'], $params['max_votes']);
+                    
+                    for ($v = 0; $v < abs($vote_count); $v++) {
+                        $vote_type = $vote_count > 0 ? 'up' : 'down';
+                        $voter_id = rand(1, 10);
+                        
+                        $wpdb->replace($votes_table, array(
+                            'post_id' => $post_id,
+                            'user_id' => $voter_id,
+                            'vote_type' => $vote_type
+                        ));
+                    }
+                    
+                    // Add view count
+                    $view_count = rand($params['min_views'], $params['max_views']);
+                    update_post_meta($post_id, '_community_views', $view_count);
+                    
+                    $batch_data['stats']['posts']++;
+                    $batch_data['stats']['votes'] += abs($vote_count);
+                    $batch_data['stats']['views'] += $view_count;
+                    
+                    $batch_data['logs'][] = array(
+                        'type' => 'success',
+                        'message' => "Created post: " . $title
+                    );
+                } else {
+                    $batch_data['logs'][] = array(
+                        'type' => 'error',
+                        'message' => "Failed to create post: " . ($title ?: 'Unknown error')
+                    );
+                }
+            } else {
+                $batch_data['logs'][] = array(
+                    'type' => 'error',
+                    'message' => "AI API failed for topic: " . $topic
+                );
+            }
+            
+            // Update progress
+            $batch_data['completed'] = $i + 1;
+            set_transient("ai_batch_$batch_id", $batch_data, HOUR_IN_SECONDS);
+        }
+        
+        // Mark as completed
+        $batch_data['status'] = 'completed';
+        $batch_data['logs'][] = array(
+            'type' => 'success',
+            'message' => 'Generation completed successfully!'
+        );
+        set_transient("ai_batch_$batch_id", $batch_data, HOUR_IN_SECONDS);
+    }
+
+    // Add this simplified API call method
+    private function call_openrouter_api_simple($prompt, $api_key) {
+        $response = wp_remote_post('https://openrouter.ai/api/v1/chat/completions', array(
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $api_key,
+                'Content-Type' => 'application/json',
+                'HTTP-Referer' => home_url(),
+                'X-Title' => 'Community Hub Plugin'
+            ),
+            'body' => json_encode(array(
+                'model' => 'anthropic/claude-3-haiku', // Use cheaper model for bulk generation
+                'messages' => array(
+                    array('role' => 'user', 'content' => $prompt)
+                ),
+                'max_tokens' => 800,
+                'temperature' => 0.7
+            )),
+            'timeout' => 30
+        ));
+        
+        if (is_wp_error($response)) {
+            error_log('OpenRouter API Error: ' . $response->get_error_message());
+            return false;
+        }
+        
+        $response_code = wp_remote_retrieve_response_code($response);
+        if ($response_code !== 200) {
+            error_log('OpenRouter API HTTP Error: ' . $response_code);
+            return false;
+        }
+        
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+        
+        if (isset($data['error'])) {
+            error_log('OpenRouter API Error: ' . $data['error']['message']);
+            return false;
+        }
+        
+        return $data['choices'][0]['message']['content'] ?? false;
     }
     
     public function get_generation_status() {

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Community Hub
  * Description: A modern community forum plugin with AI integration
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: Your Name
  */
 
@@ -59,6 +59,7 @@ class CommunityHub {
         add_action('init', array($this, 'init'));
         register_activation_hook(__FILE__, array($this, 'activate'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
+        add_action('wp_enqueue_scripts', array($this, 'force_enqueue_styles'), 999); // Add this line
         add_shortcode('community_forum', array($this, 'forum_shortcode'));
         add_shortcode('create_post', array($this, 'create_post_shortcode'));
 
@@ -120,13 +121,35 @@ class CommunityHub {
     }
     
     public function enqueue_scripts() {
-        wp_enqueue_script('community-hub-js', COMMUNITY_HUB_URL . 'assets/script.js', array('jquery'), '1.0.0', true);
-        wp_enqueue_style('community-hub-css', COMMUNITY_HUB_URL . 'assets/style.css', array(), '1.0.0');
+        // Only load on our community pages
+        if (is_page('forum') || is_page('create-post') || 
+            (is_admin() && isset($_GET['page']) && $_GET['page'] === 'community-ai-generator')) {
+            
+            wp_enqueue_script('community-hub-js', COMMUNITY_HUB_URL . 'assets/script.js', array('jquery'), '1.0.0', true);
+            wp_enqueue_style('community-hub-css', COMMUNITY_HUB_URL . 'assets/style.css', array(), '1.0.0');
+            
+            wp_localize_script('community-hub-js', 'communityAjax', array(
+                'ajaxurl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('community_nonce')
+            ));
+        }
+    }
+
+    public function force_enqueue_styles() {
+        global $post;
         
-        wp_localize_script('community-hub-js', 'communityAjax', array(
-            'ajaxurl' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('community_nonce')
-        ));
+        // Check if we're on a page with our shortcodes
+        if (is_a($post, 'WP_Post') && (has_shortcode($post->post_content, 'community_forum') || 
+            has_shortcode($post->post_content, 'create_post'))) {
+            
+            wp_enqueue_style('community-hub-css', COMMUNITY_HUB_URL . 'assets/style.css', array(), '1.0.0');
+            wp_enqueue_script('community-hub-js', COMMUNITY_HUB_URL . 'assets/script.js', array('jquery'), '1.0.0', true);
+            
+            wp_localize_script('community-hub-js', 'communityAjax', array(
+                'ajaxurl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('community_nonce')
+            ));
+        }
     }
     
     public function forum_shortcode($atts) {
