@@ -1,50 +1,42 @@
 <?php
 /**
- * Template for displaying single community posts
- * Save as: templates/single-post.php
+ * Template for single community posts
+ * Save as: templates/single-community-post.php
  */
 
 if (!defined('ABSPATH')) exit;
 
-// Get the post ID from URL
-$post_id = get_query_var('community_post_id');
-if (!$post_id && isset($_GET['post_id'])) {
-    $post_id = intval($_GET['post_id']);
-}
+// Force load our styles
+wp_enqueue_style(
+    'community-hub-pro-css',
+    COMMUNITY_HUB_URL . 'assets/style.css',
+    array(),
+    COMMUNITY_HUB_VERSION
+);
 
-if (!$post_id) {
-    wp_redirect(home_url('/community-forum/'));
-    exit;
-}
+wp_enqueue_script(
+    'community-hub-pro-js',
+    COMMUNITY_HUB_URL . 'assets/script.js',
+    array('jquery'),
+    COMMUNITY_HUB_VERSION,
+    true
+);
 
-$post = get_post($post_id);
+wp_localize_script('community-hub-pro-js', 'communityHub', array(
+    'ajaxurl' => admin_url('admin-ajax.php'),
+    'nonce' => wp_create_nonce('community_hub_nonce'),
+    'user_id' => get_current_user_id(),
+    'is_logged_in' => is_user_logged_in()
+));
+
+// Get the current post
+global $post;
 if (!$post || $post->post_type !== 'community_post') {
     wp_redirect(home_url('/community-forum/'));
     exit;
 }
 
-// Get post data
-$votes = get_post_votes($post->ID);
-$user_vote = get_user_vote($post->ID, get_current_user_id());
-$communities_terms = get_the_terms($post->ID, 'community_category');
-$community = $communities_terms ? $communities_terms[0]->name : 'general';
-$community_slug = $communities_terms ? $communities_terms[0]->slug : 'general';
-$post_tags = get_post_meta($post->ID, '_community_tags', true);
-$tags = $post_tags ? array_map('trim', explode(',', $post_tags)) : array();
-$post_type_meta = get_post_meta($post->ID, '_community_post_type', true) ?: 'discussion';
-
-// Increment view count
-$views = get_post_meta($post->ID, '_community_views', true) ?: 0;
-update_post_meta($post->ID, '_community_views', $views + 1);
-
-// Get comments
-$comments = get_comments(array(
-    'post_id' => $post->ID,
-    'status' => 'approve',
-    'order' => 'ASC'
-));
-
-// Helper functions (same as forum template)
+// Helper functions
 function get_post_votes($post_id) {
     global $wpdb;
     $table = $wpdb->prefix . 'community_votes';
@@ -74,6 +66,26 @@ function get_user_vote($post_id, $user_id) {
     ));
 }
 
+// Get post data
+$votes = get_post_votes($post->ID);
+$user_vote = get_user_vote($post->ID, get_current_user_id());
+$communities_terms = get_the_terms($post->ID, 'community_category');
+$community = $communities_terms ? $communities_terms[0]->name : 'general';
+$community_slug = $communities_terms ? $communities_terms[0]->slug : 'general';
+$post_tags = get_post_meta($post->ID, '_community_tags', true);
+$tags = $post_tags ? array_map('trim', explode(',', $post_tags)) : array();
+
+// Increment view count
+$views = get_post_meta($post->ID, '_community_views', true) ?: 0;
+update_post_meta($post->ID, '_community_views', $views + 1);
+
+// Get comments
+$comments = get_comments(array(
+    'post_id' => $post->ID,
+    'status' => 'approve',
+    'order' => 'ASC'
+));
+
 // Get communities for sidebar
 $communities = get_terms(array(
     'taxonomy' => 'community_category',
@@ -82,10 +94,22 @@ $communities = get_terms(array(
 
 $total_posts = wp_count_posts('community_post')->publish;
 $total_users = count_users()['total_users'];
+
+// Start output buffering to capture the entire page
+ob_start();
 ?>
+<!DOCTYPE html>
+<html <?php language_attributes(); ?>>
+<head>
+    <meta charset="<?php bloginfo('charset'); ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?php echo esc_html($post->post_title); ?> - Community Forum</title>
+    <?php wp_head(); ?>
+</head>
+<body <?php body_class('community-single-post'); ?>>
 
 <div class="community-hub-container">
-    <!-- Header (same as forum) -->
+    <!-- Header -->
     <header class="ch-header">
         <div class="ch-header-content">
             <a href="<?php echo home_url('/community-forum/'); ?>" class="ch-logo">
@@ -194,7 +218,7 @@ $total_users = count_users()['total_users'];
 
                     <!-- Post Actions -->
                     <div class="ch-post-actions">
-                        <button class="ch-action-btn" onclick="sharePost('<?php echo get_current_url(); ?>')">
+                        <button class="ch-action-btn" onclick="sharePost('<?php echo get_permalink($post->ID); ?>')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
                             </svg>
@@ -250,7 +274,7 @@ $total_users = count_users()['total_users'];
                     </div>
                     <?php else: ?>
                     <div class="ch-login-prompt">
-                        <p><a href="<?php echo wp_login_url(get_current_url()); ?>">Login</a> to join the discussion</p>
+                        <p><a href="<?php echo wp_login_url(get_permalink($post->ID)); ?>">Login</a> to join the discussion</p>
                     </div>
                     <?php endif; ?>
 
@@ -300,7 +324,7 @@ $total_users = count_users()['total_users'];
                 </section>
             </main>
 
-            <!-- Sidebar (same as forum) -->
+            <!-- Sidebar -->
             <aside class="ch-sidebar">
                 <!-- About Community -->
                 <div class="ch-widget">
@@ -348,7 +372,7 @@ $total_users = count_users()['total_users'];
                     ?>
                     <div class="ch-related-posts">
                         <?php foreach ($related_posts as $related_post): ?>
-                        <a href="<?php echo home_url("/community-post/{$related_post->ID}/"); ?>" class="ch-related-post">
+                        <a href="<?php echo get_permalink($related_post->ID); ?>" class="ch-related-post">
                             <h4><?php echo esc_html(wp_trim_words($related_post->post_title, 8)); ?></h4>
                             <div class="ch-related-meta">
                                 <?php echo human_time_diff(strtotime($related_post->post_date)); ?> ago
@@ -377,8 +401,55 @@ $total_users = count_users()['total_users'];
     </div>
 </div>
 
-<?php
-function get_current_url() {
-    return (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+<script>
+// Global functions for post interactions
+function sharePost(url) {
+    if (navigator.share) {
+        navigator.share({
+            title: 'Check out this post',
+            url: url
+        });
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(url).then(() => {
+            showMessage('Link copied to clipboard!', 'success');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = url;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showMessage('Link copied to clipboard!', 'success');
+        });
+    }
 }
-?>
+
+function savePost(postId) {
+    showMessage('Post saved!', 'success');
+}
+
+function showMessage(message, type) {
+    const existing = document.querySelectorAll('.ch-message');
+    existing.forEach(msg => msg.remove());
+    
+    const messageEl = document.createElement('div');
+    messageEl.className = `ch-message ch-message-${type}`;
+    messageEl.innerHTML = `
+        <span>${message}</span>
+        <button class="ch-message-close" onclick="this.parentElement.remove()">×</button>
+    `;
+    document.body.appendChild(messageEl);
+    
+    setTimeout(() => {
+        if (messageEl.parentNode) {
+            messageEl.remove();
+        }
+    }, 5000);
+}
+</script>
+
+<?php wp_footer(); ?>
+</body>
+</html>

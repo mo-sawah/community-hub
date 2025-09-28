@@ -2,24 +2,24 @@
 /**
  * Plugin Name: Community Hub Pro
  * Description: A modern, professional community forum plugin
- * Version: 2.0.2
- * Author: Mohamed Sawah
+ * Version: 2.0.4
+ * Author: Your Name
  */
 
 if (!defined('ABSPATH')) exit;
 
 define('COMMUNITY_HUB_URL', plugin_dir_url(__FILE__));
 define('COMMUNITY_HUB_PATH', plugin_dir_path(__FILE__));
-define('COMMUNITY_HUB_VERSION', '2.0.2');
+define('COMMUNITY_HUB_VERSION', '2.0.4');
 
 class CommunityHubPro {
     
     public function __construct() {
         add_action('init', array($this, 'init'));
-        add_action('init', array($this, 'add_rewrite_rules'));
         register_activation_hook(__FILE__, array($this, 'activate'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
-        add_action('template_redirect', array($this, 'handle_custom_routes'));
+        add_action('template_redirect', array($this, 'template_redirect'));
+        add_filter('single_template', array($this, 'load_custom_template'));
         add_shortcode('community_forum', array($this, 'forum_shortcode'));
         add_shortcode('create_post', array($this, 'create_post_shortcode'));
 
@@ -48,29 +48,46 @@ class CommunityHubPro {
         $this->register_ajax_handlers();
     }
     
-    public function add_rewrite_rules() {
-        // Add custom rewrite rule for community posts
-        add_rewrite_rule(
-            '^community-post/([0-9]+)/?$',
-            'index.php?community_post_id=$matches[1]',
-            'top'
-        );
-        
-        // Add query var
-        add_filter('query_vars', function($vars) {
-            $vars[] = 'community_post_id';
-            return $vars;
-        });
+    public function template_redirect() {
+        // Force our styling to load on community post pages
+        if (is_singular('community_post')) {
+            add_action('wp_head', array($this, 'force_community_styles'));
+        }
     }
     
-    public function handle_custom_routes() {
-        $post_id = get_query_var('community_post_id');
-        
-        if ($post_id) {
-            // Load our custom single post template
-            include COMMUNITY_HUB_PATH . 'templates/single-post.php';
-            exit;
+    public function load_custom_template($template) {
+        if (is_singular('community_post')) {
+            $custom_template = COMMUNITY_HUB_PATH . 'templates/single-community-post.php';
+            if (file_exists($custom_template)) {
+                return $custom_template;
+            }
         }
+        return $template;
+    }
+    
+    public function force_community_styles() {
+        // Force load our CSS and JS on community post pages
+        wp_enqueue_style(
+            'community-hub-pro-css',
+            COMMUNITY_HUB_URL . 'assets/style.css',
+            array(),
+            COMMUNITY_HUB_VERSION
+        );
+        
+        wp_enqueue_script(
+            'community-hub-pro-js',
+            COMMUNITY_HUB_URL . 'assets/script.js',
+            array('jquery'),
+            COMMUNITY_HUB_VERSION,
+            true
+        );
+        
+        wp_localize_script('community-hub-pro-js', 'communityHub', array(
+            'ajaxurl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('community_hub_nonce'),
+            'user_id' => get_current_user_id(),
+            'is_logged_in' => is_user_logged_in()
+        ));
     }
     
     private function register_ajax_handlers() {
@@ -88,7 +105,6 @@ class CommunityHubPro {
         $this->create_tables();
         $this->create_default_communities();
         $this->create_pages();
-        $this->add_rewrite_rules();
         flush_rewrite_rules();
     }
     
@@ -177,7 +193,7 @@ class CommunityHubPro {
             'menu_icon' => 'dashicons-groups',
             'menu_position' => 25,
             'has_archive' => true,
-            'rewrite' => array('slug' => 'community'),
+            'rewrite' => array('slug' => 'community-post'),
             'show_in_rest' => true
         ));
         
@@ -238,8 +254,8 @@ class CommunityHubPro {
             return true;
         }
         
-        // Load on custom community post pages
-        if (get_query_var('community_post_id')) {
+        // Load on community post single pages
+        if (is_singular('community_post')) {
             return true;
         }
         
@@ -251,8 +267,8 @@ class CommunityHubPro {
             return true;
         }
         
-        // Load on community post pages
-        if (is_singular('community_post') || is_post_type_archive('community_post')) {
+        // Load on community post archives
+        if (is_post_type_archive('community_post')) {
             return true;
         }
         
@@ -401,12 +417,10 @@ class CommunityHubPro {
         // Initialize counters
         update_post_meta($post_id, '_community_views', 0);
         
-        // Return custom URL instead of default permalink
-        $custom_url = home_url("/community-post/{$post_id}/");
-        
+        // Return normal WordPress permalink
         wp_send_json_success(array(
             'post_id' => $post_id,
-            'redirect' => $custom_url
+            'redirect' => get_permalink($post_id)
         ));
     }
     
@@ -445,7 +459,7 @@ class CommunityHubPro {
                 'id' => $post->ID,
                 'title' => $post->post_title,
                 'excerpt' => wp_trim_words($post->post_content, 30),
-                'url' => home_url("/community-post/{$post->ID}/"),
+                'url' => get_permalink($post->ID),
                 'author' => get_the_author_meta('display_name', $post->post_author),
                 'date' => human_time_diff(strtotime($post->post_date))
             );

@@ -235,9 +235,6 @@ $online_users = rand(15, 85);
                             $comment_count = get_comments_number($post->ID);
                             $post_tags = get_post_meta($post->ID, '_community_tags', true);
                             $tags = $post_tags ? array_map('trim', explode(',', $post_tags)) : array();
-                            
-                            // Create custom community post URL instead of default post URL
-                            $custom_post_url = home_url("/community-post/{$post->ID}/");
                         ?>
                         <article class="ch-post-card" data-post-id="<?php echo $post->ID; ?>">
                             <div class="ch-post-content">
@@ -273,7 +270,7 @@ $online_users = rand(15, 85);
                                     </div>
 
                                     <h3 class="ch-post-title">
-                                        <a href="<?php echo $custom_post_url; ?>">
+                                        <a href="<?php echo get_permalink($post->ID); ?>">
                                             <?php echo esc_html($post->post_title); ?>
                                         </a>
                                     </h3>
@@ -293,13 +290,13 @@ $online_users = rand(15, 85);
                                     <?php endif; ?>
 
                                     <div class="ch-post-actions">
-                                        <a href="<?php echo $custom_post_url; ?>#comments" class="ch-action-btn">
+                                        <a href="<?php echo get_permalink($post->ID); ?>#comments" class="ch-action-btn">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
                                             </svg>
                                             <?php echo $comment_count; ?> comments
                                         </a>
-                                        <button class="ch-action-btn" onclick="sharePost('<?php echo $custom_post_url; ?>')">
+                                        <button class="ch-action-btn" onclick="sharePost('<?php echo get_permalink($post->ID); ?>')">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
                                             </svg>
