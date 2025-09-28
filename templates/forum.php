@@ -1,8 +1,8 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-// Get sort parameter
-$sort = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : 'hot';
+// Get sort parameter - default to 'new' instead of 'hot'
+$sort = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : 'new';
 $community_filter = isset($_GET['community']) ? sanitize_text_field($_GET['community']) : '';
 
 // Build query args
@@ -26,13 +26,13 @@ if ($community_filter) {
 
 // Handle sorting
 switch ($sort) {
-    case 'hot':
-        $args['meta_key'] = '_community_votes';
-        $args['orderby'] = array('meta_value_num' => 'DESC', 'date' => 'DESC');
-        break;
     case 'new':
         $args['orderby'] = 'date';
         $args['order'] = 'DESC';
+        break;
+    case 'hot':
+        $args['meta_key'] = '_community_votes';
+        $args['orderby'] = array('meta_value_num' => 'DESC', 'date' => 'DESC');
         break;
     case 'top':
         $args['meta_key'] = '_community_votes';
@@ -90,7 +90,7 @@ $communities = get_terms(array(
 
 $total_posts = wp_count_posts('community_post')->publish;
 $total_users = count_users()['total_users'];
-$online_users = rand(15, 85); // Simulate online users
+$online_users = rand(15, 85);
 ?>
 
 <div class="community-hub-container">
@@ -120,9 +120,14 @@ $online_users = rand(15, 85); // Simulate online users
                         </svg>
                         Create Post
                     </a>
-                    <div class="ch-user-menu">
-                        <img src="<?php echo get_avatar_url(get_current_user_id(), 32); ?>" 
-                             alt="User Avatar" class="ch-user-avatar">
+                    <div class="ch-user-avatar">
+                        <?php 
+                        $current_user = wp_get_current_user();
+                        $avatar_url = get_avatar_url(get_current_user_id(), array('size' => 36));
+                        ?>
+                        <img src="<?php echo esc_url($avatar_url); ?>" 
+                             alt="<?php echo esc_attr($current_user->display_name); ?>" 
+                             title="<?php echo esc_attr($current_user->display_name); ?>">
                     </div>
                 <?php else: ?>
                     <a href="<?php echo wp_login_url(get_permalink()); ?>" class="ch-btn ch-btn-outline">
@@ -175,20 +180,20 @@ $online_users = rand(15, 85); // Simulate online users
                     </div>
                 </div>
 
-                <!-- Sort Tabs -->
+                <!-- Sort Tabs - NEW FIRST -->
                 <div class="ch-sort-tabs">
-                    <button class="ch-tab <?php echo $sort === 'hot' ? 'active' : ''; ?>" data-sort="hot">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2c1.5 3 3.5 5.5 3.5 8.5 0 3.5-2.5 6.5-6 6.5s-6-3-6-6.5c0-3 2-5.5 3.5-8.5 1-1.5 2.5-1.5 3.5 0z"/>
-                        </svg>
-                        Hot
-                    </button>
                     <button class="ch-tab <?php echo $sort === 'new' ? 'active' : ''; ?>" data-sort="new">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"/>
                             <polyline points="12,6 12,12 16,14"/>
                         </svg>
                         New
+                    </button>
+                    <button class="ch-tab <?php echo $sort === 'hot' ? 'active' : ''; ?>" data-sort="hot">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2c1.5 3 3.5 5.5 3.5 8.5 0 3.5-2.5 6.5-6 6.5s-6-3-6-6.5c0-3 2-5.5 3.5-8.5 1-1.5 2.5-1.5 3.5 0z"/>
+                        </svg>
+                        Hot
                     </button>
                     <button class="ch-tab <?php echo $sort === 'top' ? 'active' : ''; ?>" data-sort="top">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -226,10 +231,13 @@ $online_users = rand(15, 85); // Simulate online users
                             $user_vote = get_user_vote($post->ID, get_current_user_id());
                             $communities_terms = get_the_terms($post->ID, 'community_category');
                             $community = $communities_terms ? $communities_terms[0]->name : 'general';
+                            $community_slug = $communities_terms ? $communities_terms[0]->slug : 'general';
                             $comment_count = get_comments_number($post->ID);
                             $post_tags = get_post_meta($post->ID, '_community_tags', true);
                             $tags = $post_tags ? array_map('trim', explode(',', $post_tags)) : array();
-                            $post_type = get_post_meta($post->ID, '_community_post_type', true) ?: 'discussion';
+                            
+                            // Create custom community post URL instead of default post URL
+                            $custom_post_url = home_url("/community-post/{$post->ID}/");
                         ?>
                         <article class="ch-post-card" data-post-id="<?php echo $post->ID; ?>">
                             <div class="ch-post-content">
@@ -255,7 +263,7 @@ $online_users = rand(15, 85); // Simulate online users
                                 <!-- Post Details -->
                                 <div class="ch-post-details">
                                     <div class="ch-post-meta">
-                                        <a href="<?php echo add_query_arg('community', $communities_terms[0]->slug); ?>" class="ch-community-tag">
+                                        <a href="<?php echo add_query_arg('community', $community_slug); ?>" class="ch-community-tag">
                                             r/<?php echo esc_html($community); ?>
                                         </a>
                                         <span>•</span>
@@ -265,7 +273,7 @@ $online_users = rand(15, 85); // Simulate online users
                                     </div>
 
                                     <h3 class="ch-post-title">
-                                        <a href="<?php echo get_permalink($post->ID); ?>">
+                                        <a href="<?php echo $custom_post_url; ?>">
                                             <?php echo esc_html($post->post_title); ?>
                                         </a>
                                     </h3>
@@ -285,13 +293,13 @@ $online_users = rand(15, 85); // Simulate online users
                                     <?php endif; ?>
 
                                     <div class="ch-post-actions">
-                                        <a href="<?php echo get_permalink($post->ID); ?>#comments" class="ch-action-btn">
+                                        <a href="<?php echo $custom_post_url; ?>#comments" class="ch-action-btn">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
                                             </svg>
                                             <?php echo $comment_count; ?> comments
                                         </a>
-                                        <button class="ch-action-btn" onclick="sharePost('<?php echo get_permalink($post->ID); ?>')">
+                                        <button class="ch-action-btn" onclick="sharePost('<?php echo $custom_post_url; ?>')">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
                                             </svg>
@@ -439,6 +447,15 @@ function sharePost(url) {
         // Fallback: copy to clipboard
         navigator.clipboard.writeText(url).then(() => {
             showMessage('Link copied to clipboard!', 'success');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = url;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showMessage('Link copied to clipboard!', 'success');
         });
     }
 }
@@ -449,6 +466,10 @@ function savePost(postId) {
 }
 
 function showMessage(message, type) {
+    // Remove existing messages
+    const existing = document.querySelectorAll('.ch-message');
+    existing.forEach(msg => msg.remove());
+    
     const messageEl = document.createElement('div');
     messageEl.className = `ch-message ch-message-${type}`;
     messageEl.innerHTML = `
@@ -457,6 +478,10 @@ function showMessage(message, type) {
     `;
     document.body.appendChild(messageEl);
     
-    setTimeout(() => messageEl.remove(), 5000);
+    setTimeout(() => {
+        if (messageEl.parentNode) {
+            messageEl.remove();
+        }
+    }, 5000);
 }
 </script>

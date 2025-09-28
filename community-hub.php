@@ -2,22 +2,24 @@
 /**
  * Plugin Name: Community Hub Pro
  * Description: A modern, professional community forum plugin
- * Version: 2.0.0
- * Author: Your Name
+ * Version: 2.0.2
+ * Author: Mohamed Sawah
  */
 
 if (!defined('ABSPATH')) exit;
 
 define('COMMUNITY_HUB_URL', plugin_dir_url(__FILE__));
 define('COMMUNITY_HUB_PATH', plugin_dir_path(__FILE__));
-define('COMMUNITY_HUB_VERSION', '2.0.0');
+define('COMMUNITY_HUB_VERSION', '2.0.2');
 
 class CommunityHubPro {
     
     public function __construct() {
         add_action('init', array($this, 'init'));
+        add_action('init', array($this, 'add_rewrite_rules'));
         register_activation_hook(__FILE__, array($this, 'activate'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
+        add_action('template_redirect', array($this, 'handle_custom_routes'));
         add_shortcode('community_forum', array($this, 'forum_shortcode'));
         add_shortcode('create_post', array($this, 'create_post_shortcode'));
 
@@ -46,6 +48,31 @@ class CommunityHubPro {
         $this->register_ajax_handlers();
     }
     
+    public function add_rewrite_rules() {
+        // Add custom rewrite rule for community posts
+        add_rewrite_rule(
+            '^community-post/([0-9]+)/?$',
+            'index.php?community_post_id=$matches[1]',
+            'top'
+        );
+        
+        // Add query var
+        add_filter('query_vars', function($vars) {
+            $vars[] = 'community_post_id';
+            return $vars;
+        });
+    }
+    
+    public function handle_custom_routes() {
+        $post_id = get_query_var('community_post_id');
+        
+        if ($post_id) {
+            // Load our custom single post template
+            include COMMUNITY_HUB_PATH . 'templates/single-post.php';
+            exit;
+        }
+    }
+    
     private function register_ajax_handlers() {
         add_action('wp_ajax_ch_vote_post', array($this, 'handle_vote'));
         add_action('wp_ajax_nopriv_ch_vote_post', array($this, 'handle_vote'));
@@ -53,12 +80,15 @@ class CommunityHubPro {
         add_action('wp_ajax_nopriv_ch_create_post', array($this, 'handle_create_post'));
         add_action('wp_ajax_ch_search_posts', array($this, 'handle_search'));
         add_action('wp_ajax_nopriv_ch_search_posts', array($this, 'handle_search'));
+        add_action('wp_ajax_ch_add_comment', array($this, 'handle_add_comment'));
+        add_action('wp_ajax_nopriv_ch_add_comment', array($this, 'handle_add_comment'));
     }
     
     public function activate() {
         $this->create_tables();
         $this->create_default_communities();
         $this->create_pages();
+        $this->add_rewrite_rules();
         flush_rewrite_rules();
     }
     
@@ -120,7 +150,7 @@ class CommunityHubPro {
                 'post_title' => 'Create Post',
                 'post_content' => '[create_post]',
                 'post_status' => 'publish',
-                'post_type' => 'page', 
+                'post_type' => 'page',
                 'post_name' => 'create-community-post'
             ));
         }
@@ -205,6 +235,11 @@ class CommunityHubPro {
         
         // Load on community pages
         if (is_page('community-forum') || is_page('create-community-post')) {
+            return true;
+        }
+        
+        // Load on custom community post pages
+        if (get_query_var('community_post_id')) {
             return true;
         }
         
@@ -366,9 +401,12 @@ class CommunityHubPro {
         // Initialize counters
         update_post_meta($post_id, '_community_views', 0);
         
+        // Return custom URL instead of default permalink
+        $custom_url = home_url("/community-post/{$post_id}/");
+        
         wp_send_json_success(array(
             'post_id' => $post_id,
-            'redirect' => get_permalink($post_id)
+            'redirect' => $custom_url
         ));
     }
     
@@ -407,13 +445,86 @@ class CommunityHubPro {
                 'id' => $post->ID,
                 'title' => $post->post_title,
                 'excerpt' => wp_trim_words($post->post_content, 30),
-                'url' => get_permalink($post->ID),
+                'url' => home_url("/community-post/{$post->ID}/"),
                 'author' => get_the_author_meta('display_name', $post->post_author),
                 'date' => human_time_diff(strtotime($post->post_date))
             );
         }
         
         wp_send_json_success($results);
+    }
+    
+    public function handle_add_comment() {
+        check_ajax_referer('community_hub_nonce', 'nonce');
+        
+        if (!is_user_logged_in()) {
+            wp_send_json_error('Must be logged in to comment');
+        }
+        
+        $post_id = intval($_POST['post_id']);
+        $content = sanitize_textarea_field($_POST['content']);
+        $parent_id = intval($_POST['parent_id']) ?: 0;
+        
+        if (strlen($content) < 5) {
+            wp_send_json_error('Comment must be at least 5 characters');
+        }
+        
+        $comment_data = array(
+            'comment_post_ID' => $post_id,
+            'comment_content' => $content,
+            'comment_parent' => $parent_id,
+            'user_id' => get_current_user_id(),
+            'comment_approved' => 1
+        );
+        
+        $comment_id = wp_insert_comment($comment_data);
+        
+        if ($comment_id) {
+            $comment = get_comment($comment_id);
+            wp_send_json_success(array(
+                'comment_id' => $comment_id,
+                'html' => $this->render_comment($comment)
+            ));
+        } else {
+            wp_send_json_error('Failed to create comment');
+        }
+    }
+    
+    private function render_comment($comment) {
+        ob_start();
+        ?>
+        <div class="ch-comment" data-comment-id="<?php echo $comment->comment_ID; ?>">
+            <div class="ch-comment-avatar">
+                <img src="<?php echo get_avatar_url($comment->user_id ?: $comment->comment_author_email, array('size' => 32)); ?>" 
+                     alt="Avatar">
+            </div>
+            <div class="ch-comment-content">
+                <div class="ch-comment-meta">
+                    <span class="ch-comment-author">u/<?php echo esc_html($comment->comment_author); ?></span>
+                    <span>•</span>
+                    <span class="ch-comment-time">just now</span>
+                </div>
+                <div class="ch-comment-text">
+                    <?php echo wpautop($comment->comment_content); ?>
+                </div>
+                <div class="ch-comment-actions">
+                    <button class="ch-comment-vote-btn" data-vote="up">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m18 15-6-6-6 6"/>
+                        </svg>
+                    </button>
+                    <span class="ch-comment-votes">0</span>
+                    <button class="ch-comment-vote-btn" data-vote="down">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </button>
+                    <button class="ch-comment-reply-btn">Reply</button>
+                </div>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
     }
 }
 
