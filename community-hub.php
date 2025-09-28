@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Community Hub
  * Description: A modern community forum plugin with AI integration
- * Version: 1.0.5
+ * Version: 1.0.7
  * Author: Your Name
  */
 
@@ -10,10 +10,10 @@ if (!defined('ABSPATH')) exit;
 
 define('COMMUNITY_HUB_URL', plugin_dir_url(__FILE__));
 define('COMMUNITY_HUB_PATH', plugin_dir_path(__FILE__));
+define('COMMUNITY_HUB_VERSION', '1.0.7');
 
 class CommunityHub {
 
-    // Add this function to your main plugin file or run once
     public function create_default_communities_if_missing() {
         $communities = array(
             'general' => 'General discussions and community chat',
@@ -32,7 +32,6 @@ class CommunityHub {
         }
     }
 
-    // Add this method to the CommunityHub class
     public function create_community_pages() {
         // Create Forum page
         $forum_page = get_page_by_path('forum');
@@ -78,7 +77,6 @@ class CommunityHub {
         add_action('init', array($this, 'init'));
         register_activation_hook(__FILE__, array($this, 'activate'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
-        add_action('wp_enqueue_scripts', array($this, 'force_enqueue_styles'), 999); // Add this line
         add_shortcode('community_forum', array($this, 'forum_shortcode'));
         add_shortcode('create_post', array($this, 'create_post_shortcode'));
 
@@ -99,7 +97,7 @@ class CommunityHub {
     
     public function activate() {
         $this->create_tables();
-        $this->create_community_pages(); // Add this line
+        $this->create_community_pages();
         CommunityHubInstaller::install();
         flush_rewrite_rules();
     }
@@ -140,38 +138,40 @@ class CommunityHub {
     }
     
     public function enqueue_scripts() {
-        // Only load on our community pages
-        if (is_page('forum') || is_page('create-post') || 
-            (is_admin() && isset($_GET['page']) && $_GET['page'] === 'community-ai-generator')) {
-            
-            // Load Font Awesome first
-            wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', array(), '6.4.0');
-            
-            // Then load our CSS
-            wp_enqueue_style('community-hub-css', COMMUNITY_HUB_URL . 'assets/style.css', array('font-awesome'), '1.0.5');
-            wp_enqueue_script('community-hub-js', COMMUNITY_HUB_URL . 'assets/script.js', array('jquery'), '1.0.5', true);
-
-            wp_localize_script('community-hub-js', 'communityAjax', array(
-                'ajaxurl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('community_nonce')
-            ));
-        }
-    }
-
-    public function force_enqueue_styles() {
-        global $post;
+        // Check if we're on community pages or shortcode pages
+        $load_assets = false;
         
-        // Check if we're on a page with our shortcodes
-        if (is_a($post, 'WP_Post') && (has_shortcode($post->post_content, 'community_forum') || 
-            has_shortcode($post->post_content, 'create_post'))) {
+        if (is_page('forum') || is_page('create-post')) {
+            $load_assets = true;
+        } elseif (is_admin() && isset($_GET['page']) && $_GET['page'] === 'community-ai-generator') {
+            $load_assets = true;
+        } else {
+            global $post;
+            if (is_a($post, 'WP_Post') && (
+                has_shortcode($post->post_content, 'community_forum') || 
+                has_shortcode($post->post_content, 'create_post')
+            )) {
+                $load_assets = true;
+            }
+        }
+        
+        if ($load_assets) {
+            // Load CSS with SVG icons instead of Font Awesome
+            wp_enqueue_style(
+                'community-hub-css', 
+                COMMUNITY_HUB_URL . 'assets/style.css', 
+                array(), 
+                COMMUNITY_HUB_VERSION
+            );
             
-            // Load Font Awesome first
-            wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', array(), '6.4.0');
-            
-            // Then load our CSS
-            wp_enqueue_style('community-hub-css', COMMUNITY_HUB_URL . 'assets/style.css', array('font-awesome'), '1.0.5');
-            wp_enqueue_script('community-hub-js', COMMUNITY_HUB_URL . 'assets/script.js', array('jquery'), '1.0.5', true);
-            
+            wp_enqueue_script(
+                'community-hub-js', 
+                COMMUNITY_HUB_URL . 'assets/script.js', 
+                array('jquery'), 
+                COMMUNITY_HUB_VERSION, 
+                true
+            );
+
             wp_localize_script('community-hub-js', 'communityAjax', array(
                 'ajaxurl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('community_nonce')

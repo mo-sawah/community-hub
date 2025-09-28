@@ -1,3 +1,5 @@
+/* Community Hub Plugin CSS with SVG Icons */
+
 /* Reset and Base Styles - Scoped to plugin container */
 #community-hub-container {
   --ch-primary: #4f46e5;
@@ -67,6 +69,89 @@
   line-height: inherit;
 }
 
+/* SVG Icon Base Class */
+.ch-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* SVG Icon Definitions */
+.ch-icon-users {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'/%3E%3C/svg%3E");
+}
+
+.ch-icon-search {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+}
+
+.ch-icon-plus {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
+}
+
+.ch-icon-chevron-up {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='m18 15-6-6-6 6'/%3E%3C/svg%3E");
+}
+
+.ch-icon-chevron-down {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+.ch-icon-clock {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12,6 12,12 16,14'/%3E%3C/svg%3E");
+}
+
+.ch-icon-comment {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z'/%3E%3C/svg%3E");
+}
+
+.ch-icon-share {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13'/%3E%3C/svg%3E");
+}
+
+.ch-icon-bookmark {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='m19 21-7-4-7 4V5a2 2 0 012-2h10a2 2 0 012 2v16z'/%3E%3C/svg%3E");
+}
+
+.ch-icon-fire {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M12 2c1.5 3 3.5 5.5 3.5 8.5 0 3.5-2.5 6.5-6 6.5s-6-3-6-6.5c0-3 2-5.5 3.5-8.5 1-1.5 2.5-1.5 3.5 0z'/%3E%3C/svg%3E");
+}
+
+.ch-icon-star {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpolygon points='12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26'/%3E%3C/svg%3E");
+}
+
+.ch-icon-chart-line {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M3 3v18h18M9 9l1.5-1.5L14 12l5-5'/%3E%3C/svg%3E");
+}
+
+.ch-icon-sun {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='5'/%3E%3Cline x1='12' y1='1' x2='12' y2='3'/%3E%3Cline x1='12' y1='21' x2='12' y2='23'/%3E%3Cline x1='4.22' y1='4.22' x2='5.64' y2='5.64'/%3E%3Cline x1='18.36' y1='18.36' x2='19.78' y2='19.78'/%3E%3Cline x1='1' y1='12' x2='3' y2='12'/%3E%3Cline x1='21' y1='12' x2='23' y2='12'/%3E%3Cline x1='4.22' y1='19.78' x2='5.64' y2='18.36'/%3E%3Cline x1='18.36' y1='5.64' x2='19.78' y2='4.22'/%3E%3C/svg%3E");
+}
+
+.ch-icon-moon {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z'/%3E%3C/svg%3E");
+}
+
+.ch-icon-edit {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z'/%3E%3C/svg%3E");
+}
+
+.ch-icon-tag {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z'/%3E%3Ccircle cx='7' cy='7' r='3'/%3E%3C/svg%3E");
+}
+
+.ch-icon-arrow-left {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cline x1='19' y1='12' x2='5' y2='12'/%3E%3Cpolyline points='12,19 5,12 12,5'/%3E%3C/svg%3E");
+}
+
+.ch-icon-user {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E");
+}
+
 /* Theme Toggle */
 .ch-theme-toggle {
   position: fixed;
@@ -94,10 +179,6 @@
 .ch-theme-btn:hover {
   transform: scale(1.05);
   box-shadow: var(--ch-shadow-lg);
-}
-
-.ch-theme-btn i {
-  transition: var(--ch-transition);
 }
 
 /* Header Styles */
@@ -771,13 +852,6 @@
   line-height: 1.5;
 }
 
-.ch-tips-list li i,
-.ch-rules-list li i {
-  color: var(--ch-primary);
-  margin-top: 2px;
-  font-size: 12px;
-}
-
 /* Loading States */
 .ch-loading {
   opacity: 0.6;
@@ -837,6 +911,29 @@
   cursor: pointer;
   padding: 0;
   margin-left: auto;
+}
+
+/* Empty State */
+.ch-empty-state {
+  text-align: center;
+  padding: 64px 24px;
+  color: var(--ch-text-muted);
+}
+
+.ch-empty-state .ch-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: var(--ch-text-muted);
+}
+
+.ch-empty-state h3 {
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: var(--ch-text-secondary);
+}
+
+.ch-empty-state p {
+  font-size: 14px;
 }
 
 /* Responsive Design */
@@ -983,27 +1080,4 @@
     transform: translateY(0);
     opacity: 1;
   }
-}
-
-/* Empty State */
-.ch-empty-state {
-  text-align: center;
-  padding: 64px 24px;
-  color: var(--ch-text-muted);
-}
-
-.ch-empty-state i {
-  font-size: 48px;
-  margin-bottom: 16px;
-  color: var(--ch-text-muted);
-}
-
-.ch-empty-state h3 {
-  font-size: 18px;
-  margin-bottom: 8px;
-  color: var(--ch-text-secondary);
-}
-
-.ch-empty-state p {
-  font-size: 14px;
 }

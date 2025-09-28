@@ -67,8 +67,8 @@ $total_users = count_users()['total_users'];
     <!-- Theme Toggle -->
     <div class="ch-theme-toggle">
         <button id="ch-theme-btn" class="ch-theme-btn">
-            <i class="fas fa-sun"></i>
-            <i class="fas fa-moon" style="display: none;"></i>
+            <span class="ch-icon ch-icon-sun"></span>
+            <span class="ch-icon ch-icon-moon" style="display: none;"></span>
         </button>
     </div>
 
@@ -77,30 +77,30 @@ $total_users = count_users()['total_users'];
         <div class="ch-header-content">
             <div class="ch-header-left">
                 <h1 class="ch-logo">
-                    <i class="fas fa-users"></i>
+                    <span class="ch-icon ch-icon-users"></span>
                     CommunityHub
                 </h1>
                 <div class="ch-search-container">
-                    <i class="fas fa-search ch-search-icon"></i>
+                    <span class="ch-icon ch-icon-search ch-search-icon"></span>
                     <input type="text" placeholder="Search communities, posts, users..." class="ch-search-input">
                 </div>
             </div>
             <div class="ch-header-right">
                 <?php if (is_user_logged_in()): ?>
                     <a href="<?php echo get_permalink(get_page_by_path('create-post')); ?>" class="ch-btn ch-btn-primary">
-                        <i class="fas fa-plus"></i>
+                        <span class="ch-icon ch-icon-plus"></span>
                         Create Post
                     </a>
                     <div class="ch-user-avatar">
-                        <i class="fas fa-user"></i>
+                        <span class="ch-icon ch-icon-user"></span>
                     </div>
                 <?php else: ?>
                     <a href="<?php echo wp_login_url(get_permalink()); ?>" class="ch-btn ch-btn-outline">
-                        <i class="fas fa-sign-in-alt"></i>
+                        <span class="ch-icon ch-icon-user"></span>
                         Login
                     </a>
                     <a href="<?php echo wp_registration_url(); ?>" class="ch-btn ch-btn-primary">
-                        <i class="fas fa-user-plus"></i>
+                        <span class="ch-icon ch-icon-plus"></span>
                         Sign Up
                     </a>
                 <?php endif; ?>
@@ -115,36 +115,35 @@ $total_users = count_users()['total_users'];
                 <!-- Community Header -->
                 <div class="ch-community-header" style="margin-bottom: 24px;">
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                        <i class="fas fa-users" style="color: var(--ch-primary); font-size: 24px;"></i>
+                        <span class="ch-icon ch-icon-users" style="color: var(--ch-primary); font-size: 24px;"></span>
                         <h2 style="font-size: 24px; font-weight: 700; color: var(--ch-text-primary);">Community Forum</h2>
                     </div>
                     <p style="color: var(--ch-text-secondary); margin-bottom: 16px;">
-                        <i class="fas fa-info-circle"></i>
                         Welcome to our community! Share ideas, discuss topics, and connect with others.
                     </p>
                     <div style="display: flex; gap: 24px; font-size: 14px; color: var(--ch-text-muted);">
-                        <span><i class="fas fa-file-alt"></i> <?php echo number_format($total_posts); ?> posts</span>
-                        <span><i class="fas fa-users"></i> <?php echo number_format($total_users); ?> members</span>
-                        <span><i class="fas fa-circle" style="color: var(--ch-success);"></i> <?php echo rand(10, 50); ?> online</span>
+                        <span>📝 <?php echo number_format($total_posts); ?> posts</span>
+                        <span>👥 <?php echo number_format($total_users); ?> members</span>
+                        <span>🟢 <?php echo rand(10, 50); ?> online</span>
                     </div>
                 </div>
 
                 <!-- Sort Tabs -->
                 <div class="ch-sort-tabs">
                     <button class="ch-tab <?php echo $sort === 'hot' ? 'ch-tab-active' : ''; ?>" data-sort="hot">
-                        <i class="fas fa-fire"></i>
+                        <span class="ch-icon ch-icon-fire"></span>
                         Hot
                     </button>
                     <button class="ch-tab <?php echo $sort === 'new' ? 'ch-tab-active' : ''; ?>" data-sort="new">
-                        <i class="fas fa-clock"></i>
+                        <span class="ch-icon ch-icon-clock"></span>
                         New
                     </button>
                     <button class="ch-tab <?php echo $sort === 'top' ? 'ch-tab-active' : ''; ?>" data-sort="top">
-                        <i class="fas fa-star"></i>
+                        <span class="ch-icon ch-icon-star"></span>
                         Top
                     </button>
                     <button class="ch-tab <?php echo $sort === 'rising' ? 'ch-tab-active' : ''; ?>" data-sort="rising">
-                        <i class="fas fa-chart-line"></i>
+                        <span class="ch-icon ch-icon-chart-line"></span>
                         Rising
                     </button>
                 </div>
@@ -153,12 +152,12 @@ $total_users = count_users()['total_users'];
                 <div class="ch-posts-container">
                     <?php if (empty($posts)): ?>
                         <div class="ch-empty-state">
-                            <i class="fas fa-comments"></i>
+                            <span class="ch-icon ch-icon-comment"></span>
                             <h3>No posts yet</h3>
                             <p>Be the first to start a discussion!</p>
                             <?php if (is_user_logged_in()): ?>
                                 <a href="<?php echo get_permalink(get_page_by_path('create-post')); ?>" class="ch-btn ch-btn-primary" style="margin-top: 16px;">
-                                    <i class="fas fa-plus"></i>
+                                    <span class="ch-icon ch-icon-plus"></span>
                                     Create First Post
                                 </a>
                             <?php endif; ?>
@@ -179,12 +178,12 @@ $total_users = count_users()['total_users'];
                                 <div class="ch-vote-section">
                                     <button class="ch-vote-btn <?php echo $user_vote === 'up' ? 'ch-voted-up' : ''; ?>" 
                                             data-vote="up" <?php echo !is_user_logged_in() ? 'disabled title="Login to vote"' : ''; ?>>
-                                        <i class="fas fa-chevron-up"></i>
+                                        <span class="ch-icon ch-icon-chevron-up"></span>
                                     </button>
                                     <span class="ch-vote-count"><?php echo $votes; ?></span>
                                     <button class="ch-vote-btn <?php echo $user_vote === 'down' ? 'ch-voted-down' : ''; ?>" 
                                             data-vote="down" <?php echo !is_user_logged_in() ? 'disabled title="Login to vote"' : ''; ?>>
-                                        <i class="fas fa-chevron-down"></i>
+                                        <span class="ch-icon ch-icon-chevron-down"></span>
                                     </button>
                                 </div>
 
@@ -192,17 +191,17 @@ $total_users = count_users()['total_users'];
                                 <div class="ch-post-details">
                                     <div class="ch-post-meta">
                                         <span class="ch-community">
-                                            <i class="fas fa-tag"></i>
+                                            <span class="ch-icon ch-icon-tag"></span>
                                             r/<?php echo esc_html($community); ?>
                                         </span>
                                         <span>•</span>
                                         <span>
-                                            <i class="fas fa-user"></i>
+                                            <span class="ch-icon ch-icon-user"></span>
                                             by u/<?php echo get_the_author_meta('display_name', $post->post_author); ?>
                                         </span>
                                         <span>•</span>
                                         <span>
-                                            <i class="fas fa-clock"></i>
+                                            <span class="ch-icon ch-icon-clock"></span>
                                             <?php echo human_time_diff(strtotime($post->post_date)); ?> ago
                                         </span>
                                     </div>
@@ -225,19 +224,19 @@ $total_users = count_users()['total_users'];
 
                                     <div class="ch-post-actions">
                                         <a href="<?php echo get_permalink($post->ID); ?>#comments" class="ch-action-btn">
-                                            <i class="fas fa-comment"></i>
+                                            <span class="ch-icon ch-icon-comment"></span>
                                             <?php echo $comment_count; ?> comments
                                         </a>
                                         <button class="ch-action-btn" onclick="navigator.share ? navigator.share({url: '<?php echo get_permalink($post->ID); ?>'}) : copyToClipboard('<?php echo get_permalink($post->ID); ?>')">
-                                            <i class="fas fa-share"></i>
+                                            <span class="ch-icon ch-icon-share"></span>
                                             Share
                                         </button>
                                         <button class="ch-action-btn">
-                                            <i class="fas fa-bookmark"></i>
+                                            <span class="ch-icon ch-icon-bookmark"></span>
                                             Save
                                         </button>
                                         <button class="ch-action-btn">
-                                            <i class="fas fa-flag"></i>
+                                            <span class="ch-icon">🏴</span>
                                             Report
                                         </button>
                                     </div>
@@ -252,7 +251,7 @@ $total_users = count_users()['total_users'];
                 <?php if (count($posts) >= 20): ?>
                 <div style="text-align: center; margin-top: 32px;">
                     <button class="ch-btn ch-btn-outline" id="load-more-posts">
-                        <i class="fas fa-plus"></i>
+                        <span class="ch-icon ch-icon-plus"></span>
                         Load More Posts
                     </button>
                 </div>
@@ -264,7 +263,7 @@ $total_users = count_users()['total_users'];
                 <!-- About Community -->
                 <div class="ch-widget">
                     <h3 class="ch-widget-title">
-                        <i class="fas fa-info-circle"></i>
+                        <span class="ch-icon">ℹ️</span>
                         About Community
                     </h3>
                     <p class="ch-widget-text">
@@ -272,11 +271,11 @@ $total_users = count_users()['total_users'];
                     </p>
                     <div class="ch-community-stats">
                         <span>
-                            <i class="fas fa-file-alt"></i>
+                            <span class="ch-icon">📝</span>
                             <?php echo number_format($total_posts); ?> posts
                         </span>
                         <span>
-                            <i class="fas fa-users"></i>
+                            <span class="ch-icon ch-icon-users"></span>
                             <?php echo number_format($total_users); ?> members
                         </span>
                     </div>
@@ -285,7 +284,7 @@ $total_users = count_users()['total_users'];
                 <!-- Popular Communities -->
                 <div class="ch-widget">
                     <h3 class="ch-widget-title">
-                        <i class="fas fa-fire"></i>
+                        <span class="ch-icon ch-icon-fire"></span>
                         Popular Communities
                     </h3>
                     <div class="ch-communities-list">
@@ -304,31 +303,31 @@ $total_users = count_users()['total_users'];
                 <!-- Quick Actions -->
                 <div class="ch-widget">
                     <h3 class="ch-widget-title">
-                        <i class="fas fa-bolt"></i>
+                        <span class="ch-icon">⚡</span>
                         Quick Actions
                     </h3>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
                         <?php if (is_user_logged_in()): ?>
                             <a href="<?php echo get_permalink(get_page_by_path('create-post')); ?>" class="ch-btn ch-btn-primary">
-                                <i class="fas fa-plus"></i>
+                                <span class="ch-icon ch-icon-plus"></span>
                                 Create Post
                             </a>
                             <button class="ch-btn ch-btn-outline">
-                                <i class="fas fa-plus-circle"></i>
+                                <span class="ch-icon ch-icon-plus"></span>
                                 Create Community
                             </button>
                             <a href="<?php echo admin_url('profile.php'); ?>" class="ch-btn ch-btn-outline">
-                                <i class="fas fa-cog"></i>
+                                <span class="ch-icon">⚙️</span>
                                 Settings
                             </a>
                         <?php else: ?>
                             <a href="<?php echo wp_login_url(get_permalink()); ?>" class="ch-btn ch-btn-primary">
-                                <i class="fas fa-sign-in-alt"></i>
+                                <span class="ch-icon ch-icon-user"></span>
                                 Login to Participate
                             </a>
                         <?php endif; ?>
                         <button class="ch-btn ch-btn-outline">
-                            <i class="fas fa-question-circle"></i>
+                            <span class="ch-icon">❓</span>
                             Help & FAQ
                         </button>
                     </div>
@@ -337,15 +336,15 @@ $total_users = count_users()['total_users'];
                 <!-- Community Rules -->
                 <div class="ch-widget">
                     <h3 class="ch-widget-title">
-                        <i class="fas fa-gavel"></i>
+                        <span class="ch-icon">⚖️</span>
                         Community Rules
                     </h3>
                     <ul class="ch-rules-list">
-                        <li><i class="fas fa-heart"></i> Be respectful and civil</li>
-                        <li><i class="fas fa-ban"></i> No spam or self-promotion</li>
-                        <li><i class="fas fa-bullseye"></i> Stay on topic</li>
-                        <li><i class="fas fa-shield-alt"></i> No personal attacks</li>
-                        <li><i class="fas fa-book"></i> Follow community guidelines</li>
+                        <li><span class="ch-icon">❤️</span> Be respectful and civil</li>
+                        <li><span class="ch-icon">🚫</span> No spam or self-promotion</li>
+                        <li><span class="ch-icon">🎯</span> Stay on topic</li>
+                        <li><span class="ch-icon">🛡️</span> No personal attacks</li>
+                        <li><span class="ch-icon">📚</span> Follow community guidelines</li>
                     </ul>
                 </div>
             </aside>

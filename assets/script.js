@@ -30,8 +30,8 @@
     initTheme() {
       const $container = $("#community-hub-container");
       const $themeBtn = $("#ch-theme-btn");
-      const $sunIcon = $themeBtn.find(".fa-sun");
-      const $moonIcon = $themeBtn.find(".fa-moon");
+      const $sunIcon = $themeBtn.find(".ch-icon-sun");
+      const $moonIcon = $themeBtn.find(".ch-icon-moon");
 
       // Load saved theme
       const savedTheme = localStorage.getItem("ch-theme") || "light";
@@ -70,7 +70,10 @@
         clearTimeout(searchTimeout);
         const query = e.target.value.trim();
 
-        if (query.length < 2) return;
+        if (query.length < 2) {
+          this.resetSearch();
+          return;
+        }
 
         searchTimeout = setTimeout(() => {
           this.performSearch(query);
@@ -87,6 +90,7 @@
 
     performSearch(query) {
       console.log("Searching for:", query);
+
       // Filter posts in real-time
       $(".ch-post-card").each(function () {
         const $card = $(this);
@@ -100,6 +104,36 @@
           $card.hide().removeClass("ch-fade-in");
         }
       });
+
+      // Show no results message if no posts visible
+      const visiblePosts = $(".ch-post-card:visible").length;
+      if (visiblePosts === 0) {
+        this.showNoResults(query);
+      } else {
+        this.hideNoResults();
+      }
+    }
+
+    resetSearch() {
+      $(".ch-post-card").show().addClass("ch-fade-in");
+      this.hideNoResults();
+    }
+
+    showNoResults(query) {
+      if ($("#ch-no-results").length === 0) {
+        const noResultsHtml = `
+          <div id="ch-no-results" class="ch-empty-state">
+            <span class="ch-icon" style="font-size: 48px;">🔍</span>
+            <h3>No results found</h3>
+            <p>No posts found for "${query}". Try different keywords.</p>
+          </div>
+        `;
+        $(".ch-posts-container").append(noResultsHtml);
+      }
+    }
+
+    hideNoResults() {
+      $("#ch-no-results").remove();
     }
 
     // Voting System
@@ -136,26 +170,31 @@
           nonce: communityAjax.nonce,
         },
         success: (response) => {
-          const data = JSON.parse(response);
-          if (data.total !== undefined) {
-            $voteCount.text(data.total);
+          try {
+            const data = JSON.parse(response);
+            if (data.total !== undefined) {
+              $voteCount.text(data.total);
 
-            // Update UI
-            $upBtn.removeClass("ch-voted-up");
-            $downBtn.removeClass("ch-voted-down");
+              // Update UI
+              $upBtn.removeClass("ch-voted-up");
+              $downBtn.removeClass("ch-voted-down");
 
-            if (
-              !$btn.hasClass("ch-voted-up") &&
-              !$btn.hasClass("ch-voted-down")
-            ) {
-              $btn.addClass(
-                voteType === "up" ? "ch-voted-up" : "ch-voted-down"
-              );
+              if (
+                !$btn.hasClass("ch-voted-up") &&
+                !$btn.hasClass("ch-voted-down")
+              ) {
+                $btn.addClass(
+                  voteType === "up" ? "ch-voted-up" : "ch-voted-down"
+                );
+              }
+
+              // Animation
+              $voteCount.addClass("ch-fade-in");
+              setTimeout(() => $voteCount.removeClass("ch-fade-in"), 300);
             }
-
-            // Animation
-            $voteCount.addClass("ch-fade-in");
-            setTimeout(() => $voteCount.removeClass("ch-fade-in"), 300);
+          } catch (e) {
+            console.error("Error parsing vote response:", e);
+            this.showMessage("Error voting. Please try again.", "error");
           }
         },
         error: (xhr, status, error) => {
@@ -357,86 +396,83 @@
       let typeIcon = "";
       switch (postType) {
         case "question":
-          typeIcon = '<i class="fas fa-question-circle"></i>';
+          typeIcon = '<span class="ch-icon">❓</span>';
           break;
         case "tutorial":
-          typeIcon = '<i class="fas fa-graduation-cap"></i>';
+          typeIcon = '<span class="ch-icon">🎓</span>';
           break;
         case "announcement":
-          typeIcon = '<i class="fas fa-bullhorn"></i>';
+          typeIcon = '<span class="ch-icon">📢</span>';
           break;
         default:
-          typeIcon = '<i class="fas fa-comments"></i>';
+          typeIcon = '<span class="ch-icon">💬</span>';
       }
 
       const previewHtml = `
-                <div class="ch-post-card">
-                    <div class="ch-post-content">
-                       <div class="ch-vote-section">
-                            <button class="ch-vote-btn">
-                                <i class="fas fa-chevron-up"></i>
-                            </button>
-                            <span class="ch-vote-count">1</span>
-                            <button class="ch-vote-btn">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                        </div>
-                        <div class="ch-post-details">
-                            <div class="ch-post-meta">
-                                <span class="ch-community">
-                                    <i class="fas fa-tag"></i>
-                                    ${community}
-                                </span>
-                                <span>•</span>
-                                <span>
-                                    <i class="fas fa-user"></i>
-                                    by u/you
-                                </span>
-                                <span>•</span>
-                                <span>
-                                    <i class="fas fa-clock"></i>
-                                    just now
-                                </span>
-                            </div>
-                            <h3 class="ch-post-title">
-                                ${typeIcon} ${title}
-                            </h3>
-                            <div class="ch-post-excerpt">
-                                ${content.substring(0, 200)}${
-        content.length > 200 ? "..." : ""
-      }
-                            </div>
-                            ${
-                              tags
-                                ? `<div class="ch-post-tags">
-                                ${tags
-                                  .split(",")
-                                  .map(
-                                    (tag) =>
-                                      `<span class="ch-tag">${tag.trim()}</span>`
-                                  )
-                                  .join("")}
-                            </div>`
-                                : ""
-                            }
-                            <div class="ch-post-actions">
-                                <button class="ch-action-btn">
-                                    <i class="fas fa-comment"></i>
-                                    0 comments
-                                </button>
-                                <button class="ch-action-btn">
-                                    <i class="fas fa-share"></i>
-                                    Share
-                                </button>
-                                <button class="ch-action-btn">
-                                    <i class="fas fa-bookmark"></i>
-                                    Save
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+        <div class="ch-post-card">
+          <div class="ch-post-content">
+            <div class="ch-vote-section">
+              <button class="ch-vote-btn">
+                <span class="ch-icon ch-icon-chevron-up"></span>
+              </button>
+              <span class="ch-vote-count">1</span>
+              <button class="ch-vote-btn">
+                <span class="ch-icon ch-icon-chevron-down"></span>
+              </button>
+            </div>
+            <div class="ch-post-details">
+              <div class="ch-post-meta">
+                <span class="ch-community">
+                  <span class="ch-icon ch-icon-tag"></span>
+                  ${community}
+                </span>
+                <span>•</span>
+                <span>
+                  <span class="ch-icon ch-icon-user"></span>
+                  by u/you
+                </span>
+                <span>•</span>
+                <span>
+                  <span class="ch-icon ch-icon-clock"></span>
+                  just now
+                </span>
+              </div>
+              <h3 class="ch-post-title">
+                ${typeIcon} ${title}
+              </h3>
+              <div class="ch-post-excerpt">
+                ${content.substring(0, 200)}${content.length > 200 ? "..." : ""}
+              </div>
+              ${
+                tags
+                  ? `<div class="ch-post-tags">
+                      ${tags
+                        .split(",")
+                        .map(
+                          (tag) => `<span class="ch-tag">${tag.trim()}</span>`
+                        )
+                        .join("")}
+                    </div>`
+                  : ""
+              }
+              <div class="ch-post-actions">
+                <button class="ch-action-btn">
+                  <span class="ch-icon ch-icon-comment"></span>
+                  0 comments
+                </button>
+                <button class="ch-action-btn">
+                  <span class="ch-icon ch-icon-share"></span>
+                  Share
+                </button>
+                <button class="ch-action-btn">
+                  <span class="ch-icon ch-icon-bookmark"></span>
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
 
       $("#preview-content").html(previewHtml);
       $("#preview-modal").show().addClass("ch-fade-in");
@@ -454,7 +490,7 @@
 
       $submitBtn
         .addClass("ch-loading")
-        .html('<i class="fas fa-spinner fa-spin"></i> Publishing...');
+        .html('<span class="ch-icon">⏳</span> Publishing...');
 
       const formData = {
         action: "create_post",
@@ -471,15 +507,23 @@
         type: "POST",
         data: formData,
         success: (response) => {
-          const data = JSON.parse(response);
-          if (data.success) {
-            this.showMessage("Post published successfully!", "success");
-            // Clear draft
-            localStorage.removeItem("ch_draft");
-            setTimeout(() => {
-              window.location.href = window.location.origin + "/forum/";
-            }, 1500);
-          } else {
+          try {
+            const data = JSON.parse(response);
+            if (data.success) {
+              this.showMessage("Post published successfully!", "success");
+              // Clear draft
+              localStorage.removeItem("ch_draft");
+              setTimeout(() => {
+                window.location.href = window.location.origin + "/forum/";
+              }, 1500);
+            } else {
+              this.showMessage(
+                "Error creating post. Please try again.",
+                "error"
+              );
+            }
+          } catch (e) {
+            console.error("Error parsing response:", e);
             this.showMessage("Error creating post. Please try again.", "error");
           }
         },
@@ -489,7 +533,7 @@
         complete: () => {
           $submitBtn
             .removeClass("ch-loading")
-            .html('<i class="fas fa-paper-plane"></i> Publish Post');
+            .html('<span class="ch-icon">📤</span> Publish Post');
         },
       });
     }
@@ -511,22 +555,26 @@
     loadDraft() {
       const draft = localStorage.getItem("ch_draft");
       if (draft) {
-        const data = JSON.parse(draft);
-        $("#title").val(data.title || "");
-        $("#content").val(data.content || "");
-        $("#community").val(data.community || "");
-        $("#tags").val(data.tags || "");
-        if (data.post_type) {
-          $(`input[name="post_type"][value="${data.post_type}"]`).prop(
-            "checked",
-            true
-          );
+        try {
+          const data = JSON.parse(draft);
+          $("#title").val(data.title || "");
+          $("#content").val(data.content || "");
+          $("#community").val(data.community || "");
+          $("#tags").val(data.tags || "");
+          if (data.post_type) {
+            $(`input[name="post_type"][value="${data.post_type}"]`).prop(
+              "checked",
+              true
+            );
+          }
+
+          // Update character counter
+          $("#title").trigger("input");
+
+          this.showMessage("Draft loaded!", "info");
+        } catch (e) {
+          console.error("Error loading draft:", e);
         }
-
-        // Update character counter
-        $("#title").trigger("input");
-
-        this.showMessage("Draft loaded!", "info");
       }
     }
 
@@ -535,16 +583,20 @@
         // Check for draft on page load
         const draft = localStorage.getItem("ch_draft");
         if (draft) {
-          const data = JSON.parse(draft);
-          const age = (new Date() - new Date(data.timestamp)) / (1000 * 60); // minutes
+          try {
+            const data = JSON.parse(draft);
+            const age = (new Date() - new Date(data.timestamp)) / (1000 * 60); // minutes
 
-          if (age < 60) {
-            // Less than 1 hour old
-            if (
-              confirm("You have a recent draft. Would you like to load it?")
-            ) {
-              this.loadDraft();
+            if (age < 60) {
+              // Less than 1 hour old
+              if (
+                confirm("You have a recent draft. Would you like to load it?")
+              ) {
+                this.loadDraft();
+              }
             }
+          } catch (e) {
+            console.error("Error checking draft:", e);
           }
         }
 
@@ -582,27 +634,27 @@
       let icon = "";
       switch (type) {
         case "success":
-          icon = '<i class="fas fa-check-circle"></i>';
+          icon = '<span class="ch-icon">✅</span>';
           break;
         case "error":
-          icon = '<i class="fas fa-exclamation-circle"></i>';
+          icon = '<span class="ch-icon">❌</span>';
           break;
         case "warning":
-          icon = '<i class="fas fa-exclamation-triangle"></i>';
+          icon = '<span class="ch-icon">⚠️</span>';
           break;
         default:
-          icon = '<i class="fas fa-info-circle"></i>';
+          icon = '<span class="ch-icon">ℹ️</span>';
       }
 
       const $message = $(`
-                <div class="ch-message ch-message-${type}">
-                    ${icon}
-                    <span>${message}</span>
-                    <button class="ch-message-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `);
+        <div class="ch-message ch-message-${type}">
+          ${icon}
+          <span>${message}</span>
+          <button class="ch-message-close">
+            <span class="ch-icon">❌</span>
+          </button>
+        </div>
+      `);
 
       $("body").append($message);
 
@@ -624,13 +676,13 @@
         const $btn = $(e.currentTarget);
         $btn
           .addClass("ch-loading")
-          .html('<i class="fas fa-spinner fa-spin"></i> Loading...');
+          .html('<span class="ch-icon">⏳</span> Loading...');
 
         // Simulate loading more posts
         setTimeout(() => {
           $btn
             .removeClass("ch-loading")
-            .html('<i class="fas fa-plus"></i> Load More Posts');
+            .html('<span class="ch-icon ch-icon-plus"></span> Load More Posts');
           this.showMessage("No more posts to load", "info");
         }, 1000);
       });
@@ -662,10 +714,12 @@
   };
 
   // Initialize the plugin
-  const communityHub = new CommunityHub();
+  $(document).ready(function () {
+    const communityHub = new CommunityHub();
 
-  // Initialize load more if present
-  if ($("#load-more-posts").length) {
-    communityHub.initLoadMore();
-  }
+    // Initialize load more if present
+    if ($("#load-more-posts").length) {
+      communityHub.initLoadMore();
+    }
+  });
 })(jQuery);

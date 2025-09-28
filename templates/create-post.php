@@ -5,7 +5,7 @@ if (!is_user_logged_in()) {
     echo '<div id="community-hub-container">
         <div class="ch-main-container">
             <div style="text-align: center; padding: 64px 24px;">
-                <i class="fas fa-lock" style="font-size: 48px; color: var(--ch-text-muted); margin-bottom: 16px;"></i>
+                <span class="ch-icon" style="font-size: 48px; color: var(--ch-text-muted); margin-bottom: 16px; display: block;">🔒</span>
                 <h2>Login Required</h2>
                 <p>Please <a href="' . wp_login_url(get_permalink()) . '">login</a> to create a post.</p>
             </div>
@@ -24,8 +24,8 @@ $communities = get_terms(array(
     <!-- Theme Toggle -->
     <div class="ch-theme-toggle">
         <button id="ch-theme-btn" class="ch-theme-btn">
-            <i class="fas fa-sun"></i>
-            <i class="fas fa-moon" style="display: none;"></i>
+            <span class="ch-icon ch-icon-sun"></span>
+            <span class="ch-icon ch-icon-moon" style="display: none;"></span>
         </button>
     </div>
 
@@ -35,18 +35,18 @@ $communities = get_terms(array(
             <div class="ch-header-left">
                 <h1 class="ch-logo">
                     <a href="<?php echo get_permalink(get_page_by_path('forum')); ?>">
-                        <i class="fas fa-users"></i>
+                        <span class="ch-icon ch-icon-users"></span>
                         CommunityHub
                     </a>
                 </h1>
             </div>
             <div class="ch-header-right">
                 <a href="<?php echo get_permalink(get_page_by_path('forum')); ?>" class="ch-btn ch-btn-outline">
-                    <i class="fas fa-arrow-left"></i>
+                    <span class="ch-icon ch-icon-arrow-left"></span>
                     Back to Forum
                 </a>
                 <div class="ch-user-avatar">
-                    <i class="fas fa-user"></i>
+                    <span class="ch-icon ch-icon-user"></span>
                 </div>
             </div>
         </div>
@@ -57,7 +57,7 @@ $communities = get_terms(array(
             <div class="ch-create-post-container">
                 <div class="ch-create-header">
                     <h2>
-                        <i class="fas fa-edit"></i>
+                        <span class="ch-icon ch-icon-edit"></span>
                         Create a new post
                     </h2>
                     <p>Share your thoughts, ask questions, or start a discussion with the community</p>
@@ -69,14 +69,13 @@ $communities = get_terms(array(
                     <!-- Community Selection -->
                     <div class="ch-form-group">
                         <label for="community" class="ch-form-label">
-                            <i class="fas fa-tags"></i>
+                            <span class="ch-icon ch-icon-tag"></span>
                             Choose a community
                         </label>
                         <select name="community" id="community" class="ch-form-select" required>
                             <option value="">Select community...</option>
                             <?php foreach ($communities as $community): ?>
                                 <option value="<?php echo esc_attr($community->slug); ?>">
-                                    <i class="fas fa-tag"></i>
                                     r/<?php echo esc_html($community->name); ?>
                                 </option>
                             <?php endforeach; ?>
@@ -86,7 +85,7 @@ $communities = get_terms(array(
                     <!-- Title -->
                     <div class="ch-form-group">
                         <label for="title" class="ch-form-label">
-                            <i class="fas fa-heading"></i>
+                            <span class="ch-icon">📝</span>
                             Title
                         </label>
                         <input type="text" name="title" id="title" class="ch-form-input" 
@@ -99,32 +98,32 @@ $communities = get_terms(array(
                     <!-- Content -->
                     <div class="ch-form-group">
                         <label for="content" class="ch-form-label">
-                            <i class="fas fa-align-left"></i>
+                            <span class="ch-icon">📄</span>
                             Content
                         </label>
                         <div class="ch-editor-toolbar">
                             <button type="button" class="ch-editor-btn" data-format="bold">
-                                <i class="fas fa-bold"></i>
+                                <span class="ch-icon">🔤</span>
                                 Bold
                             </button>
                             <button type="button" class="ch-editor-btn" data-format="italic">
-                                <i class="fas fa-italic"></i>
+                                <span class="ch-icon">✨</span>
                                 Italic
                             </button>
                             <button type="button" class="ch-editor-btn" data-format="link">
-                                <i class="fas fa-link"></i>
+                                <span class="ch-icon">🔗</span>
                                 Link
                             </button>
                             <button type="button" class="ch-editor-btn" data-format="code">
-                                <i class="fas fa-code"></i>
+                                <span class="ch-icon">👨‍💻</span>
                                 Code
                             </button>
                             <button type="button" class="ch-editor-btn" data-format="list">
-                                <i class="fas fa-list"></i>
+                                <span class="ch-icon">📋</span>
                                 List
                             </button>
                             <button type="button" class="ch-editor-btn" data-format="quote">
-                                <i class="fas fa-quote-left"></i>
+                                <span class="ch-icon">💬</span>
                                 Quote
                             </button>
                         </div>
@@ -136,13 +135,13 @@ $communities = get_terms(array(
                     <!-- Tags -->
                     <div class="ch-form-group">
                         <label for="tags" class="ch-form-label">
-                            <i class="fas fa-hashtag"></i>
+                            <span class="ch-icon">#️⃣</span>
                             Tags (optional)
                         </label>
                         <input type="text" name="tags" id="tags" class="ch-form-input" 
                                placeholder="discussion, help, question, tutorial (separated by commas)">
                         <small class="ch-form-help">
-                            <i class="fas fa-info-circle"></i>
+                            <span class="ch-icon">ℹ️</span>
                             Add relevant tags to help others find your post
                         </small>
                     </div>
@@ -150,28 +149,28 @@ $communities = get_terms(array(
                     <!-- Post Type -->
                     <div class="ch-form-group">
                         <label class="ch-form-label">
-                            <i class="fas fa-layer-group"></i>
+                            <span class="ch-icon">📂</span>
                             Post Type
                         </label>
                         <div style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="radio" name="post_type" value="discussion" checked>
-                                <i class="fas fa-comments"></i>
+                                <span class="ch-icon">💬</span>
                                 Discussion
                             </label>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="radio" name="post_type" value="question">
-                                <i class="fas fa-question-circle"></i>
+                                <span class="ch-icon">❓</span>
                                 Question
                             </label>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="radio" name="post_type" value="tutorial">
-                                <i class="fas fa-graduation-cap"></i>
+                                <span class="ch-icon">🎓</span>
                                 Tutorial
                             </label>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="radio" name="post_type" value="announcement">
-                                <i class="fas fa-bullhorn"></i>
+                                <span class="ch-icon">📢</span>
                                 Announcement
                             </label>
                         </div>
@@ -180,15 +179,15 @@ $communities = get_terms(array(
                     <!-- Actions -->
                     <div class="ch-form-actions">
                         <button type="button" class="ch-btn ch-btn-outline" id="preview-btn">
-                            <i class="fas fa-eye"></i>
+                            <span class="ch-icon">👁️</span>
                             Preview
                         </button>
                         <button type="button" class="ch-btn ch-btn-secondary" id="save-draft-btn">
-                            <i class="fas fa-save"></i>
+                            <span class="ch-icon">💾</span>
                             Save Draft
                         </button>
                         <button type="submit" class="ch-btn ch-btn-primary" id="publish-btn">
-                            <i class="fas fa-paper-plane"></i>
+                            <span class="ch-icon">📤</span>
                             Publish Post
                         </button>
                     </div>
@@ -199,11 +198,11 @@ $communities = get_terms(array(
                     <div class="ch-modal-content">
                         <div class="ch-modal-header">
                             <h3>
-                                <i class="fas fa-eye"></i>
+                                <span class="ch-icon">👁️</span>
                                 Post Preview
                             </h3>
                             <button type="button" class="ch-modal-close" id="close-preview">
-                                <i class="fas fa-times"></i>
+                                <span class="ch-icon">❌</span>
                             </button>
                         </div>
                         <div class="ch-modal-body">
@@ -217,36 +216,36 @@ $communities = get_terms(array(
             <aside class="ch-create-sidebar">
                 <div class="ch-widget">
                     <h3 class="ch-widget-title">
-                        <i class="fas fa-lightbulb"></i>
+                        <span class="ch-icon">💡</span>
                         Posting Tips
                     </h3>
                     <ul class="ch-tips-list">
-                        <li><i class="fas fa-pen"></i> Write a clear, descriptive title</li>
-                        <li><i class="fas fa-bullseye"></i> Choose the right community</li>
-                        <li><i class="fas fa-book"></i> Add relevant context in your post</li>
-                        <li><i class="fas fa-search"></i> Search before posting duplicates</li>
-                        <li><i class="fas fa-hashtag"></i> Use tags to improve discoverability</li>
-                        <li><i class="fas fa-users"></i> Engage with replies and comments</li>
+                        <li><span class="ch-icon">✏️</span> Write a clear, descriptive title</li>
+                        <li><span class="ch-icon">🎯</span> Choose the right community</li>
+                        <li><span class="ch-icon">📖</span> Add relevant context in your post</li>
+                        <li><span class="ch-icon">🔍</span> Search before posting duplicates</li>
+                        <li><span class="ch-icon">#️⃣</span> Use tags to improve discoverability</li>
+                        <li><span class="ch-icon">👥</span> Engage with replies and comments</li>
                     </ul>
                 </div>
 
                 <div class="ch-widget">
                     <h3 class="ch-widget-title">
-                        <i class="fas fa-gavel"></i>
+                        <span class="ch-icon">⚖️</span>
                         Community Rules
                     </h3>
                     <ul class="ch-rules-list">
-                        <li><i class="fas fa-heart"></i> Be respectful and civil</li>
-                        <li><i class="fas fa-ban"></i> No spam or self-promotion</li>
-                        <li><i class="fas fa-bullseye"></i> Stay on topic</li>
-                        <li><i class="fas fa-shield-alt"></i> No personal attacks</li>
-                        <li><i class="fas fa-book"></i> Follow community guidelines</li>
+                        <li><span class="ch-icon">❤️</span> Be respectful and civil</li>
+                        <li><span class="ch-icon">🚫</span> No spam or self-promotion</li>
+                        <li><span class="ch-icon">🎯</span> Stay on topic</li>
+                        <li><span class="ch-icon">🛡️</span> No personal attacks</li>
+                        <li><span class="ch-icon">📚</span> Follow community guidelines</li>
                     </ul>
                 </div>
 
                 <div class="ch-widget">
                     <h3 class="ch-widget-title">
-                        <i class="fas fa-keyboard"></i>
+                        <span class="ch-icon">⌨️</span>
                         Formatting Guide
                     </h3>
                     <div style="font-size: 12px; color: var(--ch-text-secondary);">
