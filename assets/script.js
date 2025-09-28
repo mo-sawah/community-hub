@@ -12,6 +12,7 @@
       this.initVoting();
       this.initSortTabs();
       this.initLoadMore();
+      this.initForms();
     }
 
     bindEvents() {
@@ -88,15 +89,15 @@
 
       if (results.length === 0) {
         $container.html(`
-                    <div class="ch-empty-state">
-                        <div class="ch-empty-icon">🔍</div>
-                        <h3>No results found</h3>
-                        <p>Try different keywords or browse all posts.</p>
-                        <button class="ch-btn ch-btn-outline" onclick="location.reload()">
-                            Show All Posts
-                        </button>
-                    </div>
-                `);
+          <div class="chp-empty-state">
+            <div class="chp-empty-icon">🔍</div>
+            <h3>No results found</h3>
+            <p>Try different keywords or browse all posts.</p>
+            <button class="chp-btn chp-btn-outline" onclick="location.reload()">
+              Show All Posts
+            </button>
+          </div>
+        `);
         return;
       }
 
@@ -111,51 +112,51 @@
 
     createPostCardHTML(post) {
       return `
-                <article class="ch-post-card" data-post-id="${post.id}">
-                    <div class="ch-post-content">
-                        <div class="ch-vote-section">
-                            <button class="ch-vote-btn" data-vote="up" data-post-id="${post.id}">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="m18 15-6-6-6 6"/>
-                                </svg>
-                            </button>
-                            <span class="ch-vote-count">0</span>
-                            <button class="ch-vote-btn" data-vote="down" data-post-id="${post.id}">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="m6 9 6 6 6-6"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="ch-post-details">
-                            <div class="ch-post-meta">
-                                <span>by u/${post.author}</span>
-                                <span>•</span>
-                                <span>${post.date} ago</span>
-                            </div>
-                            <h3 class="ch-post-title">
-                                <a href="${post.url}">${post.title}</a>
-                            </h3>
-                            <div class="ch-post-excerpt">
-                                ${post.excerpt}
-                            </div>
-                            <div class="ch-post-actions">
-                                <a href="${post.url}#comments" class="ch-action-btn">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-                                    </svg>
-                                    Comments
-                                </a>
-                                <button class="ch-action-btn" onclick="sharePost('${post.url}')">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
-                                    </svg>
-                                    Share
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </article>
-            `;
+        <article class="chp-post-card" data-post-id="${post.id}">
+          <div class="chp-post-content">
+            <div class="chp-vote-section">
+              <button class="chp-vote-btn" data-vote="up" data-post-id="${post.id}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m18 15-6-6-6 6"/>
+                </svg>
+              </button>
+              <span class="chp-vote-count">0</span>
+              <button class="chp-vote-btn" data-vote="down" data-post-id="${post.id}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m6 9 6 6 6-6"/>
+                </svg>
+              </button>
+            </div>
+            <div class="chp-post-details">
+              <div class="chp-post-meta">
+                <span>by u/${post.author}</span>
+                <span>•</span>
+                <span>${post.date} ago</span>
+              </div>
+              <h3 class="chp-post-title">
+                <a href="${post.url}">${post.title}</a>
+              </h3>
+              <div class="chp-post-excerpt">
+                ${post.excerpt}
+              </div>
+              <div class="chp-post-actions">
+                <a href="${post.url}#comments" class="chp-action-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                  </svg>
+                  Comments
+                </a>
+                <button class="chp-action-btn" onclick="sharePost('${post.url}')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
+                  </svg>
+                  Share
+                </button>
+              </div>
+            </div>
+          </div>
+        </article>
+      `;
     }
 
     resetSearch() {
@@ -166,17 +167,17 @@
       const $container = $("#posts-container");
       if (show) {
         $container.html(`
-                    <div class="ch-empty-state">
-                        <div class="ch-spinner"></div>
-                        <h3>Searching...</h3>
-                    </div>
-                `);
+          <div class="chp-empty-state">
+            <div class="chp-spinner"></div>
+            <h3>Searching...</h3>
+          </div>
+        `);
       }
     }
 
     // Voting system
     initVoting() {
-      $(document).on("click", ".ch-vote-btn:not([disabled])", (e) => {
+      $(document).on("click", ".chp-vote-btn:not([disabled])", (e) => {
         e.preventDefault();
         const $btn = $(e.currentTarget);
         const postId = $btn.data("post-id");
@@ -194,13 +195,13 @@
         return;
       }
 
-      const $card = $btn.closest(".ch-post-card");
-      const $voteCount = $card.find(".ch-vote-count");
+      const $card = $btn.closest(".chp-post-card, .chp-single-post");
+      const $voteCount = $card.find(".chp-vote-count");
       const $upBtn = $card.find('[data-vote="up"]');
       const $downBtn = $card.find('[data-vote="down"]');
 
       // Show loading
-      $btn.addClass("ch-loading");
+      $btn.addClass("chp-loading");
 
       $.ajax({
         url: communityHub.ajaxurl,
@@ -228,8 +229,8 @@
             }
 
             // Animation
-            $voteCount.addClass("ch-fade-in");
-            setTimeout(() => $voteCount.removeClass("ch-fade-in"), 300);
+            $voteCount.addClass("chp-fade-in");
+            setTimeout(() => $voteCount.removeClass("chp-fade-in"), 300);
           } else {
             this.showMessage(response.data || "Vote failed", "error");
           }
@@ -238,14 +239,14 @@
           this.showMessage("Vote failed. Please try again.", "error");
         },
         complete: () => {
-          $btn.removeClass("ch-loading");
+          $btn.removeClass("chp-loading");
         },
       });
     }
 
     // Sort tabs
     initSortTabs() {
-      $(".ch-tab").on("click", (e) => {
+      $(".chp-tab").on("click", (e) => {
         const $tab = $(e.currentTarget);
         const sortType = $tab.data("sort");
 
@@ -262,36 +263,176 @@
         e.preventDefault();
         const $btn = $(e.currentTarget);
 
-        $btn.addClass("ch-loading").html(`
-                    <div class="ch-spinner"></div>
-                    Loading...
-                `);
+        $btn.addClass("chp-loading").html(`
+          <div class="chp-spinner"></div>
+          Loading...
+        `);
 
         // Simulate loading (replace with actual AJAX call)
         setTimeout(() => {
-          $btn.removeClass("ch-loading").html(`
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 5v14M5 12h14"/>
-                        </svg>
-                        Load More Posts
-                    `);
+          $btn.removeClass("chp-loading").html(`
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Load More Posts
+          `);
           this.showMessage("No more posts to load", "info");
         }, 1000);
       });
     }
 
+    // Form handling
+    initForms() {
+      // Character counter for title
+      $("#title").on("input", function () {
+        $("#title-counter").text(this.value.length);
+      });
+
+      // Create post form
+      $("#chp-create-post-form").on("submit", (e) => {
+        e.preventDefault();
+        this.handleCreatePost();
+      });
+
+      // Comment form
+      $("#comment-form").on("submit", (e) => {
+        e.preventDefault();
+        this.handleAddComment();
+      });
+
+      // Preview functionality
+      $("#preview-btn").on("click", () => {
+        this.showPreview();
+      });
+
+      $("#close-preview").on("click", () => {
+        $("#preview-modal").hide();
+      });
+
+      // Close modal on outside click
+      $("#preview-modal").on("click", (e) => {
+        if (e.target === e.currentTarget) {
+          $(e.currentTarget).hide();
+        }
+      });
+    }
+
+    handleCreatePost() {
+      const $form = $("#chp-create-post-form");
+      const $btn = $("#publish-btn");
+
+      $btn
+        .addClass("chp-loading")
+        .html('<div class="chp-spinner"></div> Publishing...');
+
+      $.ajax({
+        url: communityHub.ajaxurl,
+        type: "POST",
+        data: $form.serialize() + "&action=ch_create_post",
+        success: (response) => {
+          if (response.success) {
+            window.location.href = response.data.redirect;
+          } else {
+            this.showMessage(response.data || "Failed to create post", "error");
+          }
+        },
+        error: () => {
+          this.showMessage("Failed to create post. Please try again.", "error");
+        },
+        complete: () => {
+          $btn.removeClass("chp-loading").html("<span>🚀</span> Publish Post");
+        },
+      });
+    }
+
+    handleAddComment() {
+      const content = $("#comment-content").val().trim();
+      if (!content) {
+        this.showMessage("Please enter a comment", "warning");
+        return;
+      }
+
+      const $btn = $("#comment-form button[type='submit']");
+      $btn
+        .addClass("chp-loading")
+        .html('<div class="chp-spinner"></div> Posting...');
+
+      $.ajax({
+        url: communityHub.ajaxurl,
+        type: "POST",
+        data: {
+          action: "ch_add_comment",
+          post_id: $("article.chp-single-post").data("post-id"),
+          content: content,
+          parent_id: 0,
+          nonce: communityHub.nonce,
+        },
+        success: (response) => {
+          if (response.success) {
+            $("#comment-content").val("");
+            $(".chp-comments-list").prepend(response.data.html);
+            this.showMessage("Comment posted successfully!", "success");
+          } else {
+            this.showMessage(
+              response.data || "Failed to post comment",
+              "error"
+            );
+          }
+        },
+        error: () => {
+          this.showMessage(
+            "Failed to post comment. Please try again.",
+            "error"
+          );
+        },
+        complete: () => {
+          $btn.removeClass("chp-loading").html("Comment");
+        },
+      });
+    }
+
+    showPreview() {
+      const title = $("#title").val();
+      const content = $("#content").val();
+      const community = $("#community option:selected").text();
+
+      if (!title || !content) {
+        this.showMessage(
+          "Please fill in title and content to preview",
+          "warning"
+        );
+        return;
+      }
+
+      $("#preview-content").html(`
+        <div style="border-bottom: 1px solid var(--chp-border); padding-bottom: 16px; margin-bottom: 16px;">
+          <div style="font-size: 12px; color: var(--chp-text-muted); margin-bottom: 8px;">
+            ${community} • by u/${
+        communityHub.current_user || "user"
+      } • just now
+          </div>
+          <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 12px; color: var(--chp-text-primary);">${title}</h2>
+        </div>
+        <div style="line-height: 1.6; color: var(--chp-text-primary);">${content.replace(
+          /\n/g,
+          "<br>"
+        )}</div>
+      `);
+      $("#preview-modal").show();
+    }
+
     // Utility functions
     addAnimations() {
-      $(".ch-post-card").each((index, element) => {
+      $(".chp-post-card").each((index, element) => {
         setTimeout(() => {
-          $(element).addClass("ch-fade-in");
+          $(element).addClass("chp-fade-in");
         }, index * 50);
       });
     }
 
     showMessage(message, type = "info") {
       // Remove existing messages
-      $(".ch-message").remove();
+      $(".chp-message").remove();
 
       let icon = "";
       switch (type) {
@@ -309,12 +450,12 @@
       }
 
       const $message = $(`
-                <div class="ch-message ch-message-${type}">
-                    <span>${icon}</span>
-                    <span>${message}</span>
-                    <button class="ch-message-close">×</button>
-                </div>
-            `);
+        <div class="chp-message chp-message-${type}">
+          <span>${icon}</span>
+          <span>${message}</span>
+          <button class="chp-message-close">×</button>
+        </div>
+      `);
 
       $("body").append($message);
 
@@ -324,14 +465,14 @@
       }, 5000);
 
       // Close button
-      $message.find(".ch-message-close").on("click", () => {
+      $message.find(".chp-message-close").on("click", () => {
         $message.fadeOut(() => $message.remove());
       });
     }
 
     // Tag filtering
     initTagFiltering() {
-      $(document).on("click", ".ch-tag", (e) => {
+      $(document).on("click", ".chp-tag", (e) => {
         e.preventDefault();
         const tag = $(e.currentTarget).data("tag");
         $("#community-search").val(tag).trigger("input");
@@ -342,8 +483,41 @@
   // Initialize when document is ready
   $(document).ready(() => {
     const communityHubPro = new CommunityHubPro();
-
-    // Initialize tag filtering
     communityHubPro.initTagFiltering();
   });
+
+  // Global functions for post interactions
+  window.sharePost = function (url) {
+    if (navigator.share) {
+      navigator.share({
+        title: "Check out this post",
+        url: url,
+      });
+    } else {
+      navigator.clipboard
+        .writeText(url)
+        .then(() => {
+          $("body").trigger("showMessage", [
+            "Link copied to clipboard!",
+            "success",
+          ]);
+        })
+        .catch(() => {
+          const textArea = document.createElement("textarea");
+          textArea.value = url;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textArea);
+          $("body").trigger("showMessage", [
+            "Link copied to clipboard!",
+            "success",
+          ]);
+        });
+    }
+  };
+
+  window.savePost = function (postId) {
+    $("body").trigger("showMessage", ["Post saved!", "success"]);
+  };
 })(jQuery);

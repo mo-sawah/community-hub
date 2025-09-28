@@ -1,16 +1,17 @@
 <?php
 /**
  * Plugin Name: Community Hub Pro
+ * Author URI: https://sawahsolutions.com
  * Description: A modern, professional community forum plugin
- * Version: 2.0.4
- * Author: Your Name
+ * Version: 2.1.0
+ * Author: Mohamed Sawah
  */
 
 if (!defined('ABSPATH')) exit;
 
 define('COMMUNITY_HUB_URL', plugin_dir_url(__FILE__));
 define('COMMUNITY_HUB_PATH', plugin_dir_path(__FILE__));
-define('COMMUNITY_HUB_VERSION', '2.0.4');
+define('COMMUNITY_HUB_VERSION', '2.1.0');
 
 class CommunityHubPro {
     
