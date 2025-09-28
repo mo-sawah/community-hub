@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Community Hub
- * Description: A modern community forum plugin with AI integration
- * Version: 1.0.7
+ * Plugin Name: Community Hub Pro
+ * Description: A modern, professional community forum plugin
+ * Version: 2.0.0
  * Author: Your Name
  */
 
@@ -10,15 +10,83 @@ if (!defined('ABSPATH')) exit;
 
 define('COMMUNITY_HUB_URL', plugin_dir_url(__FILE__));
 define('COMMUNITY_HUB_PATH', plugin_dir_path(__FILE__));
-define('COMMUNITY_HUB_VERSION', '1.0.7');
+define('COMMUNITY_HUB_VERSION', '2.0.0');
 
-class CommunityHub {
+class CommunityHubPro {
+    
+    public function __construct() {
+        add_action('init', array($this, 'init'));
+        register_activation_hook(__FILE__, array($this, 'activate'));
+        add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
+        add_shortcode('community_forum', array($this, 'forum_shortcode'));
+        add_shortcode('create_post', array($this, 'create_post_shortcode'));
 
-    public function create_default_communities_if_missing() {
+        // Include additional files
+        $this->include_files();
+    }
+    
+    private function include_files() {
+        $files = array(
+            'includes/admin.php',
+            'includes/ai-helper.php', 
+            'includes/ai-content-generator.php',
+            'includes/installer.php'
+        );
+        
+        foreach ($files as $file) {
+            $file_path = COMMUNITY_HUB_PATH . $file;
+            if (file_exists($file_path)) {
+                require_once $file_path;
+            }
+        }
+    }
+    
+    public function init() {
+        $this->create_post_type();
+        $this->register_ajax_handlers();
+    }
+    
+    private function register_ajax_handlers() {
+        add_action('wp_ajax_ch_vote_post', array($this, 'handle_vote'));
+        add_action('wp_ajax_nopriv_ch_vote_post', array($this, 'handle_vote'));
+        add_action('wp_ajax_ch_create_post', array($this, 'handle_create_post'));
+        add_action('wp_ajax_nopriv_ch_create_post', array($this, 'handle_create_post'));
+        add_action('wp_ajax_ch_search_posts', array($this, 'handle_search'));
+        add_action('wp_ajax_nopriv_ch_search_posts', array($this, 'handle_search'));
+    }
+    
+    public function activate() {
+        $this->create_tables();
+        $this->create_default_communities();
+        $this->create_pages();
+        flush_rewrite_rules();
+    }
+    
+    private function create_tables() {
+        global $wpdb;
+        
+        $votes_table = $wpdb->prefix . 'community_votes';
+        $sql = "CREATE TABLE IF NOT EXISTS $votes_table (
+            id int(11) NOT NULL AUTO_INCREMENT,
+            post_id int(11) NOT NULL,
+            user_id int(11) NOT NULL,
+            vote_type varchar(10) NOT NULL,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY unique_vote (post_id, user_id),
+            KEY post_id (post_id),
+            KEY user_id (user_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+        
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
+    }
+    
+    private function create_default_communities() {
         $communities = array(
-            'general' => 'General discussions and community chat',
             'technology' => 'Technology news and discussions',
-            'programming' => 'Programming tips and code sharing',
+            'programming' => 'Programming tips and code sharing', 
+            'general' => 'General discussions and community chat',
             'announcements' => 'Official announcements and updates'
         );
         
@@ -31,218 +99,244 @@ class CommunityHub {
             }
         }
     }
-
-    public function create_community_pages() {
+    
+    private function create_pages() {
         // Create Forum page
-        $forum_page = get_page_by_path('forum');
+        $forum_page = get_page_by_path('community-forum');
         if (!$forum_page) {
-            $forum_id = wp_insert_post(array(
+            wp_insert_post(array(
                 'post_title' => 'Community Forum',
                 'post_content' => '[community_forum]',
                 'post_status' => 'publish',
                 'post_type' => 'page',
-                'post_name' => 'forum',
-                'post_excerpt' => 'Join our community discussions'
+                'post_name' => 'community-forum'
             ));
-            
-            if ($forum_id) {
-                update_post_meta($forum_id, '_wp_page_template', 'page-full-width.php');
-            }
         }
         
-        // Create Create Post page
-        $create_page = get_page_by_path('create-post');
+        // Create Create Post page  
+        $create_page = get_page_by_path('create-community-post');
         if (!$create_page) {
-            $create_id = wp_insert_post(array(
-                'post_title' => 'Create New Post',
+            wp_insert_post(array(
+                'post_title' => 'Create Post',
                 'post_content' => '[create_post]',
                 'post_status' => 'publish',
-                'post_type' => 'page',
-                'post_name' => 'create-post',
-                'post_excerpt' => 'Share your thoughts with the community'
+                'post_type' => 'page', 
+                'post_name' => 'create-community-post'
             ));
-            
-            if ($create_id) {
-                update_post_meta($create_id, '_wp_page_template', 'page-full-width.php');
-            }
         }
-        
-        return array(
-            'forum' => get_page_by_path('forum'),
-            'create_post' => get_page_by_path('create-post')
-        );
-    }
-    
-    public function __construct() {
-        add_action('init', array($this, 'init'));
-        register_activation_hook(__FILE__, array($this, 'activate'));
-        add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
-        add_shortcode('community_forum', array($this, 'forum_shortcode'));
-        add_shortcode('create_post', array($this, 'create_post_shortcode'));
-
-        // Include additional files
-        require_once COMMUNITY_HUB_PATH . 'includes/admin.php';
-        require_once COMMUNITY_HUB_PATH . 'includes/ai-helper.php';
-        require_once COMMUNITY_HUB_PATH . 'includes/ai-content-generator.php';
-        require_once COMMUNITY_HUB_PATH . 'includes/installer.php';
-    }
-    
-    public function init() {
-        $this->create_post_type();
-        add_action('wp_ajax_vote_post', array($this, 'handle_vote'));
-        add_action('wp_ajax_nopriv_vote_post', array($this, 'handle_vote'));
-        add_action('wp_ajax_create_post', array($this, 'handle_create_post'));
-        add_action('wp_ajax_nopriv_create_post', array($this, 'handle_create_post'));
-    }
-    
-    public function activate() {
-        $this->create_tables();
-        $this->create_community_pages();
-        CommunityHubInstaller::install();
-        flush_rewrite_rules();
-    }
-    
-    public function create_tables() {
-        global $wpdb;
-        
-        $votes_table = $wpdb->prefix . 'community_votes';
-        $sql = "CREATE TABLE IF NOT EXISTS $votes_table (
-            id int(11) NOT NULL AUTO_INCREMENT,
-            post_id int(11) NOT NULL,
-            user_id int(11) NOT NULL,
-            vote_type varchar(10) NOT NULL,
-            created_at datetime DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            UNIQUE KEY unique_vote (post_id, user_id)
-        )";
-        
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql);
     }
     
     public function create_post_type() {
         register_post_type('community_post', array(
             'public' => true,
             'label' => 'Community Posts',
-            'supports' => array('title', 'editor', 'author', 'comments'),
+            'labels' => array(
+                'name' => 'Community Posts',
+                'singular_name' => 'Community Post',
+                'add_new' => 'Add New Post',
+                'add_new_item' => 'Add New Community Post',
+                'edit_item' => 'Edit Community Post',
+                'new_item' => 'New Community Post',
+                'view_item' => 'View Community Post',
+                'search_items' => 'Search Community Posts',
+                'not_found' => 'No community posts found',
+                'not_found_in_trash' => 'No community posts found in trash'
+            ),
+            'supports' => array('title', 'editor', 'author', 'comments', 'excerpt'),
             'show_in_menu' => true,
             'menu_icon' => 'dashicons-groups',
+            'menu_position' => 25,
             'has_archive' => true,
+            'rewrite' => array('slug' => 'community'),
+            'show_in_rest' => true
         ));
         
         register_taxonomy('community_category', 'community_post', array(
             'hierarchical' => true,
             'label' => 'Communities',
+            'labels' => array(
+                'name' => 'Communities',
+                'singular_name' => 'Community',
+                'add_new_item' => 'Add New Community',
+                'edit_item' => 'Edit Community',
+                'update_item' => 'Update Community',
+                'view_item' => 'View Community',
+                'search_items' => 'Search Communities'
+            ),
             'public' => true,
+            'show_ui' => true,
+            'show_admin_column' => true,
+            'rewrite' => array('slug' => 'community'),
+            'show_in_rest' => true
         ));
     }
     
-    public function enqueue_scripts() {
-        // Check if we're on community pages or shortcode pages
-        $load_assets = false;
-        
-        if (is_page('forum') || is_page('create-post')) {
-            $load_assets = true;
-        } elseif (is_admin() && isset($_GET['page']) && $_GET['page'] === 'community-ai-generator') {
-            $load_assets = true;
-        } else {
-            global $post;
-            if (is_a($post, 'WP_Post') && (
-                has_shortcode($post->post_content, 'community_forum') || 
-                has_shortcode($post->post_content, 'create_post')
-            )) {
-                $load_assets = true;
-            }
+    public function enqueue_assets() {
+        // Only load on community pages
+        if (!$this->should_load_assets()) {
+            return;
         }
         
-        if ($load_assets) {
-            // Load CSS with SVG icons instead of Font Awesome
-            wp_enqueue_style(
-                'community-hub-css', 
-                COMMUNITY_HUB_URL . 'assets/style.css', 
-                array(), 
-                COMMUNITY_HUB_VERSION
-            );
-            
-            wp_enqueue_script(
-                'community-hub-js', 
-                COMMUNITY_HUB_URL . 'assets/script.js', 
-                array('jquery'), 
-                COMMUNITY_HUB_VERSION, 
-                true
-            );
-
-            wp_localize_script('community-hub-js', 'communityAjax', array(
-                'ajaxurl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('community_nonce')
-            ));
+        wp_enqueue_style(
+            'community-hub-pro-css',
+            COMMUNITY_HUB_URL . 'assets/style.css',
+            array(),
+            COMMUNITY_HUB_VERSION
+        );
+        
+        wp_enqueue_script(
+            'community-hub-pro-js',
+            COMMUNITY_HUB_URL . 'assets/script.js',
+            array('jquery'),
+            COMMUNITY_HUB_VERSION,
+            true
+        );
+        
+        wp_localize_script('community-hub-pro-js', 'communityHub', array(
+            'ajaxurl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('community_hub_nonce'),
+            'user_id' => get_current_user_id(),
+            'is_logged_in' => is_user_logged_in()
+        ));
+    }
+    
+    private function should_load_assets() {
+        global $post;
+        
+        // Load on community pages
+        if (is_page('community-forum') || is_page('create-community-post')) {
+            return true;
         }
+        
+        // Load if shortcode is present
+        if (is_a($post, 'WP_Post') && (
+            has_shortcode($post->post_content, 'community_forum') || 
+            has_shortcode($post->post_content, 'create_post')
+        )) {
+            return true;
+        }
+        
+        // Load on community post pages
+        if (is_singular('community_post') || is_post_type_archive('community_post')) {
+            return true;
+        }
+        
+        return false;
     }
     
     public function forum_shortcode($atts) {
+        $atts = shortcode_atts(array(
+            'posts_per_page' => 20,
+            'show_sidebar' => true,
+            'community' => ''
+        ), $atts);
+        
         ob_start();
         include COMMUNITY_HUB_PATH . 'templates/forum.php';
         return ob_get_clean();
     }
     
     public function create_post_shortcode($atts) {
+        $atts = shortcode_atts(array(
+            'redirect_after' => home_url('/community-forum/')
+        ), $atts);
+        
         ob_start();
         include COMMUNITY_HUB_PATH . 'templates/create-post.php';
         return ob_get_clean();
     }
     
     public function handle_vote() {
-        check_ajax_referer('community_nonce', 'nonce');
+        check_ajax_referer('community_hub_nonce', 'nonce');
         
-        global $wpdb;
         $post_id = intval($_POST['post_id']);
         $vote_type = sanitize_text_field($_POST['vote_type']);
         $user_id = get_current_user_id();
         
         if (!$user_id) {
-            wp_die(json_encode(array('error' => 'Must be logged in')));
+            wp_send_json_error('Must be logged in to vote');
         }
         
+        if (!in_array($vote_type, array('up', 'down'))) {
+            wp_send_json_error('Invalid vote type');
+        }
+        
+        global $wpdb;
         $table = $wpdb->prefix . 'community_votes';
+        
+        // Check existing vote
         $existing = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table WHERE post_id = %d AND user_id = %d",
+            "SELECT vote_type FROM $table WHERE post_id = %d AND user_id = %d",
             $post_id, $user_id
         ));
         
         if ($existing) {
             if ($existing->vote_type === $vote_type) {
+                // Remove vote
                 $wpdb->delete($table, array('post_id' => $post_id, 'user_id' => $user_id));
+                $user_vote = null;
             } else {
-                $wpdb->update($table, array('vote_type' => $vote_type), 
-                    array('post_id' => $post_id, 'user_id' => $user_id));
+                // Change vote
+                $wpdb->update($table, 
+                    array('vote_type' => $vote_type),
+                    array('post_id' => $post_id, 'user_id' => $user_id)
+                );
+                $user_vote = $vote_type;
             }
         } else {
+            // New vote
             $wpdb->insert($table, array(
                 'post_id' => $post_id,
                 'user_id' => $user_id,
                 'vote_type' => $vote_type
             ));
+            $user_vote = $vote_type;
         }
         
+        // Get updated totals
         $up_votes = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table WHERE post_id = %d AND vote_type = 'up'", $post_id
-        ));
-        $down_votes = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table WHERE post_id = %d AND vote_type = 'down'", $post_id
+            "SELECT COUNT(*) FROM $table WHERE post_id = %d AND vote_type = 'up'",
+            $post_id
         ));
         
-        wp_die(json_encode(array('total' => $up_votes - $down_votes)));
+        $down_votes = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table WHERE post_id = %d AND vote_type = 'down'",
+            $post_id
+        ));
+        
+        wp_send_json_success(array(
+            'total' => intval($up_votes) - intval($down_votes),
+            'user_vote' => $user_vote
+        ));
     }
     
     public function handle_create_post() {
-        check_ajax_referer('community_nonce', 'nonce');
+        check_ajax_referer('community_hub_nonce', 'nonce');
+        
+        if (!is_user_logged_in()) {
+            wp_send_json_error('Must be logged in to create posts');
+        }
         
         $title = sanitize_text_field($_POST['title']);
         $content = wp_kses_post($_POST['content']);
         $community = sanitize_text_field($_POST['community']);
         $tags = sanitize_text_field($_POST['tags']);
-        $post_type = sanitize_text_field($_POST['post_type']);
+        $post_type_meta = sanitize_text_field($_POST['post_type']);
         
+        // Validation
+        if (strlen($title) < 5) {
+            wp_send_json_error('Title must be at least 5 characters');
+        }
+        
+        if (strlen($content) < 10) {
+            wp_send_json_error('Content must be at least 10 characters');
+        }
+        
+        if (empty($community)) {
+            wp_send_json_error('Please select a community');
+        }
+        
+        // Create post
         $post_id = wp_insert_post(array(
             'post_title' => $title,
             'post_content' => $content,
@@ -251,26 +345,77 @@ class CommunityHub {
             'post_author' => get_current_user_id()
         ));
         
-        if ($post_id) {
-            if ($community) {
-                wp_set_object_terms($post_id, $community, 'community_category');
-            }
-            
-            if ($tags) {
-                update_post_meta($post_id, '_community_tags', $tags);
-            }
-            
-            if ($post_type) {
-                update_post_meta($post_id, '_community_post_type', $post_type);
-            }
-            
-            // Initialize view count
-            update_post_meta($post_id, '_community_views', 0);
+        if (is_wp_error($post_id)) {
+            wp_send_json_error('Failed to create post');
         }
         
-        wp_die(json_encode(array('success' => true, 'post_id' => $post_id)));
+        // Set community
+        if ($community) {
+            wp_set_object_terms($post_id, $community, 'community_category');
+        }
+        
+        // Set meta data
+        if ($tags) {
+            update_post_meta($post_id, '_community_tags', $tags);
+        }
+        
+        if ($post_type_meta) {
+            update_post_meta($post_id, '_community_post_type', $post_type_meta);
+        }
+        
+        // Initialize counters
+        update_post_meta($post_id, '_community_views', 0);
+        
+        wp_send_json_success(array(
+            'post_id' => $post_id,
+            'redirect' => get_permalink($post_id)
+        ));
+    }
+    
+    public function handle_search() {
+        check_ajax_referer('community_hub_nonce', 'nonce');
+        
+        $query = sanitize_text_field($_POST['query']);
+        $community = sanitize_text_field($_POST['community']);
+        
+        if (strlen($query) < 2) {
+            wp_send_json_error('Query too short');
+        }
+        
+        $args = array(
+            'post_type' => 'community_post',
+            'posts_per_page' => 20,
+            's' => $query,
+            'post_status' => 'publish'
+        );
+        
+        if ($community) {
+            $args['tax_query'] = array(
+                array(
+                    'taxonomy' => 'community_category',
+                    'field' => 'slug',
+                    'terms' => $community
+                )
+            );
+        }
+        
+        $posts = get_posts($args);
+        $results = array();
+        
+        foreach ($posts as $post) {
+            $results[] = array(
+                'id' => $post->ID,
+                'title' => $post->post_title,
+                'excerpt' => wp_trim_words($post->post_content, 30),
+                'url' => get_permalink($post->ID),
+                'author' => get_the_author_meta('display_name', $post->post_author),
+                'date' => human_time_diff(strtotime($post->post_date))
+            );
+        }
+        
+        wp_send_json_success($results);
     }
 }
 
-new CommunityHub();
-?>
+// Initialize the plugin
+new CommunityHubPro();
