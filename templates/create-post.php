@@ -206,24 +206,6 @@ $communities = get_terms(array(
                             </button>
                         </div>
                     </form>
-
-                    <!-- Preview Modal -->
-                    <div id="preview-modal" class="chp-modal" style="display: none;">
-                        <div class="chp-modal-content">
-                            <div class="chp-modal-header">
-                                <h3>
-                                    <span>👁️</span>
-                                    Post Preview
-                                </h3>
-                                <button type="button" class="chp-modal-close" id="close-preview">
-                                    <span>✕</span>
-                                </button>
-                            </div>
-                            <div class="chp-modal-body">
-                                <div id="preview-content"></div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </main>
 
