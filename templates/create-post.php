@@ -196,10 +196,6 @@ $communities = get_terms(array(
 
                         <!-- Actions -->
                         <div class="chp-form-actions">
-                            <button type="button" class="chp-btn chp-btn-outline" id="preview-btn">
-                                <span>👁️</span>
-                                Preview
-                            </button>
                             <button type="button" class="chp-btn chp-btn-secondary" id="save-draft-btn">
                                 <span>💾</span>
                                 Save Draft
@@ -315,28 +311,6 @@ jQuery(document).ready(function($) {
         });
     });
 
-    // Preview functionality
-    $('#preview-btn').on('click', function() {
-        const title = $('#title').val();
-        const content = $('#content').val();
-        const community = $('#community option:selected').text();
-        
-        if (!title || !content) {
-            showMessage('Please fill in title and content to preview', 'warning');
-            return;
-        }
-        
-        $('#preview-content').html(`
-            <div style="border-bottom: 1px solid var(--chp-border); padding-bottom: 16px; margin-bottom: 16px;">
-                <div style="font-size: 12px; color: var(--chp-text-muted); margin-bottom: 8px;">
-                    ${community} • by u/<?php echo esc_js(wp_get_current_user()->display_name); ?> • just now
-                </div>
-                <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 12px; color: var(--chp-text-primary);">${title}</h2>
-            </div>
-            <div style="line-height: 1.6; color: var(--chp-text-primary);">${content.replace(/\n/g, '<br>')}</div>
-        `);
-        $('#preview-modal').show();
-    });
 
     $('#close-preview').on('click', function() {
         $('#preview-modal').hide();

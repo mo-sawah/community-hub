@@ -3,7 +3,7 @@
  * Plugin Name: Community Hub Pro
  * Author URI: https://sawahsolutions.com
  * Description: A modern, professional community forum plugin
- * Version: 2.1.1
+ * Version: 2.1.2
  * Author: Mohamed Sawah
  */
 
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) exit;
 
 define('COMMUNITY_HUB_URL', plugin_dir_url(__FILE__));
 define('COMMUNITY_HUB_PATH', plugin_dir_path(__FILE__));
-define('COMMUNITY_HUB_VERSION', '2.1.1');
+define('COMMUNITY_HUB_VERSION', '2.1.2');
 
 class CommunityHubPro {
     
@@ -21,6 +21,8 @@ class CommunityHubPro {
         add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
         add_action('template_redirect', array($this, 'template_redirect'));
         add_filter('single_template', array($this, 'load_custom_template'));
+        add_filter('template_include', array($this, 'force_community_post_template'), 99);
+        add_action('wp_head', array($this, 'force_single_post_assets'));
         add_shortcode('community_forum', array($this, 'forum_shortcode'));
         add_shortcode('create_post', array($this, 'create_post_shortcode'));
 
@@ -540,6 +542,42 @@ class CommunityHubPro {
         </div>
         <?php
         return ob_get_clean();
+    }
+
+    public function force_community_post_template($template) {
+        if (is_singular('community_post')) {
+            $custom_template = COMMUNITY_HUB_PATH . 'templates/single-community-post.php';
+            if (file_exists($custom_template)) {
+                return $custom_template;
+            }
+        }
+        return $template;
+    }
+
+    public function force_single_post_assets() {
+        if (is_singular('community_post')) {
+            wp_enqueue_style(
+                'community-hub-pro-css',
+                COMMUNITY_HUB_URL . 'assets/style.css',
+                array(),
+                COMMUNITY_HUB_VERSION
+            );
+            
+            wp_enqueue_script(
+                'community-hub-pro-js',
+                COMMUNITY_HUB_URL . 'assets/script.js',
+                array('jquery'),
+                COMMUNITY_HUB_VERSION,
+                true
+            );
+            
+            wp_localize_script('community-hub-pro-js', 'communityHub', array(
+                'ajaxurl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('community_hub_nonce'),
+                'user_id' => get_current_user_id(),
+                'is_logged_in' => is_user_logged_in()
+            ));
+        }
     }
 }
 
